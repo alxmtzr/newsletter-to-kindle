@@ -15,6 +15,7 @@ Runs as a single Docker container on a VPS. Parses today's TLDR email, generates
   - [Install](#install)
   - [Commands](#commands)
   - [Tests](#tests)
+- [Processing state lifecycle](#processing-state-lifecycle)
 - [VPS deployment (Docker)](#vps-deployment-docker)
   - [First-time setup](#first-time-setup)
   - [Docker commands](#docker-commands)
@@ -40,6 +41,39 @@ IMAP (Gmail)  →  Parser  →  Newsletter  →  Cover (Pillow)  →  EPUB (eboo
 2. The email is parsed — sponsors removed, tracking links unwrapped — and rendered as a clean EPUB with a randomly-generated cover (1200×1800, random colour and pattern each run).
 3. The EPUB is validated with EPUBCheck, then emailed to your `@kindle.com` address.
 4. Amazon processes it asynchronously. On failure a bounce email arrives; the script detects it on the next run and retries (max 3 attempts). After 3 failures you get a dead-letter notification with the EPUB attached for manual sideloading.
+
+---
+
+## Processing state lifecycle
+
+SQLite is the single source of truth. Every newsletter goes through these states:
+
+```
+fetched → parsed → epub_built → validated → sent → confirmed_ok   ✅
+                                                 ↘ confirmed_failed → retry (max 3×)
+                                                                    → dead_letter  ❌
+```
+
+| Status | Meaning |
+|---|---|
+| `fetched` | Email found in IMAP, recorded in DB |
+| `parsed` | HTML parsed, Newsletter object built |
+| `epub_built` | EPUB file written to disk |
+| `validated` | EPUBCheck passed (or skipped if jar unavailable) |
+| `sent` | SMTP accepted by Gmail, waiting for Amazon outcome |
+| `confirmed_ok` | 30 min passed with no bounce — assumed delivered ✅ |
+| `confirmed_failed` | Amazon bounce email received → eligible for retry |
+| `dead_letter` | 3 attempts all failed → notification email with EPUB attached |
+
+The pipeline picks up rows automatically:
+- `validated` with 0 send attempts → sends immediately (`pending_sends`)
+- `confirmed_failed` with < 3 attempts → resends on next run (`pending_retries`)
+- `dead_letter` → sends you a notification email for manual sideloading
+
+To manually reset a failed row for retry:
+```sh
+python -m newsletter_kindle cleanup --reset-failed
+```
 
 ---
 
