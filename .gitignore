@@ -1,0 +1,25 @@
+# Secrets — never commit
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Generated EPUBs (only test snapshots in tests/ are committed)
+*.epub
+!tests/fixtures/**/*.epub
+
+# Runtime data
+data/
+
+# macOS
+.DS_Store

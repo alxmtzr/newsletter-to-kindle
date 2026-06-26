@@ -1,0 +1,53 @@
+body {
+    font-family: Georgia, serif;
+    font-size: 1em;
+    line-height: 1.65;
+    margin: 1em 2em;
+    color: #111;
+}
+h1 {
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-top: 1.8em;
+    margin-bottom: 0.4em;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 0.3em;
+}
+h2 {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-top: 1.4em;
+    margin-bottom: 0.2em;
+}
+.section-header {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+}
+.article {
+    margin-bottom: 1.8em;
+    padding-bottom: 1.2em;
+    border-bottom: 1px dotted #ccc;
+}
+.article:last-child {
+    border-bottom: none;
+}
+.article-title {
+    font-weight: bold;
+    font-size: 1em;
+    margin-bottom: 0.3em;
+}
+.article-title a {
+    text-decoration: none;
+    color: #1a1a8c;
+}
+.article-body {
+    color: #333;
+    font-size: 0.97em;
+}
+.read-time {
+    font-size: 0.82em;
+    color: #999;
+    font-style: italic;
+}
