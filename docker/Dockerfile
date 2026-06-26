@@ -1,13 +1,12 @@
-# Stage 1: Build stage — only used to download EPUBCheck jar
+# Stage 1: Build stage — only used to download EPUBCheck and its dependencies
 FROM eclipse-temurin:21-jre-alpine AS jre
 
 ARG EPUBCHECK_VERSION=5.1.0
 RUN apk add --no-cache wget unzip && \
-    mkdir -p /opt/epubcheck && \
     wget -q "https://github.com/w3c/epubcheck/releases/download/v${EPUBCHECK_VERSION}/epubcheck-${EPUBCHECK_VERSION}.zip" \
          -O /tmp/epubcheck.zip && \
     unzip /tmp/epubcheck.zip -d /tmp/epubcheck_extract && \
-    cp "/tmp/epubcheck_extract/epubcheck-${EPUBCHECK_VERSION}/epubcheck.jar" /opt/epubcheck/ && \
+    mv "/tmp/epubcheck_extract/epubcheck-${EPUBCHECK_VERSION}" /opt/epubcheck && \
     rm -rf /tmp/epubcheck.zip /tmp/epubcheck_extract
 
 # Stage 2: Runtime — Python + JRE + app

@@ -12,7 +12,9 @@ from newsletter_kindle.models import Document
 
 log = structlog.get_logger()
 
-_EPUBCHECK_JAR = Path("/opt/epubcheck/epubcheck.jar")
+_EPUBCHECK_DIR = Path("/opt/epubcheck")
+_EPUBCHECK_JAR = _EPUBCHECK_DIR / "epubcheck.jar"
+_EPUBCHECK_LIB = _EPUBCHECK_DIR / "lib"
 
 
 @dataclass
@@ -27,22 +29,20 @@ def validate_epub(document: Document) -> ValidationResult:
         log.warning("epubcheck.jar_not_found", path=str(_EPUBCHECK_JAR))
         return ValidationResult(ok=True, errors=[], warnings=["EPUBCheck not available"])
 
+    # EPUBCheck 5.x requires lib/* on the classpath alongside the main jar
+    if _EPUBCHECK_LIB.exists():
+        classpath = f"{_EPUBCHECK_JAR}:{_EPUBCHECK_LIB}/*"
+        cmd = ["java", "-cp", classpath, "com.adobe.epubcheck.tool.Checker"]
+    else:
+        cmd = ["java", "-jar", str(_EPUBCHECK_JAR)]
+
     with tempfile.TemporaryDirectory() as tmp:
         epub_path = Path(tmp) / document.filename
         epub_path.write_bytes(document.data)
         report_path = Path(tmp) / "report.json"
 
         result = subprocess.run(
-            [
-                "java",
-                "-jar",
-                str(_EPUBCHECK_JAR),
-                str(epub_path),
-                "--json",
-                str(report_path),
-                "--mode",
-                "epub",
-            ],
+            cmd + [str(epub_path), "--json", str(report_path), "--mode", "epub"],
             capture_output=True,
             text=True,
             timeout=60,
