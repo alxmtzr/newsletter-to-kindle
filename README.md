@@ -120,10 +120,12 @@ pre-commit install
 | `python -m newsletter_kindle run --dry-run` | Full pipeline (IMAP → parse → EPUB) but **skips** Kindle send |
 | `python -m newsletter_kindle run` | Full pipeline including Kindle send |
 | `python -m newsletter_kindle status` | Show recent processing state from SQLite |
+| `python -m newsletter_kindle status --full` | Show complete error tracebacks for failed rows |
 | `python -m newsletter_kindle test-alert` | Send a test notification email to verify SMTP + alert config |
 | `python -m newsletter_kindle test-kindle` | Send an invalid EPUB to Kindle to test the bounce/retry loop |
 | `python -m newsletter_kindle cleanup --test` | Remove test-kindle entries from the state DB |
 | `python -m newsletter_kindle cleanup --old 30` | Remove confirmed/dead entries older than 30 days |
+| `python -m newsletter_kindle cleanup --reset-failed` | Reset failed rows to validated so they retry on next run |
 | `python -m newsletter_kindle build <file.eml>` | Build an EPUB from a local `.eml` file — no IMAP, no send |
 
 #### `run`
@@ -184,11 +186,12 @@ Parses a local `.eml` file and writes an EPUB to the output directory. Does not 
 #### `cleanup`
 
 ```sh
-.venv/bin/python -m newsletter_kindle cleanup [--test] [--old DAYS] [--db data/state.db]
+.venv/bin/python -m newsletter_kindle cleanup [--test] [--old DAYS] [--reset-failed] [--db data/state.db]
 ```
 
 - `--test` — remove all `test-kindle` entries from the state DB
 - `--old N` — remove confirmed/dead entries older than N days
+- `--reset-failed` — reset all `confirmed_failed` rows back to `validated` so the next `run` retries them (useful after fixing a bug that caused failures)
 
 ### Tests
 
@@ -220,10 +223,12 @@ docker compose up -d --build
 | `docker compose exec app python -m newsletter_kindle run --dry-run` | Dry run inside container |
 | `docker compose exec app python -m newsletter_kindle run` | Real run inside container |
 | `docker compose exec app python -m newsletter_kindle status` | Check processing state |
+| `docker compose exec app python -m newsletter_kindle status --full` | Show full error tracebacks |
 | `docker compose exec app python -m newsletter_kindle test-alert` | Test notification email |
 | `docker compose exec app python -m newsletter_kindle test-kindle` | Test bounce/retry loop |
 | `docker compose exec app python -m newsletter_kindle cleanup --test` | Remove test entries |
 | `docker compose exec app python -m newsletter_kindle cleanup --old 30` | Remove entries older than 30 days |
+| `docker compose exec app python -m newsletter_kindle cleanup --reset-failed` | Reset failed rows for retry |
 | `docker logs -f newsletter-kindle` | Stream container logs |
 | `docker compose up -d --build` | Rebuild and restart container |
 | `docker compose down` | Stop container |
