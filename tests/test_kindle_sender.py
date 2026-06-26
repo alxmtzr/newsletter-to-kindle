@@ -20,23 +20,39 @@ def test_send_uses_smtp() -> None:
         user="u@gmail.com",
         password="pw",
         kindle_email="me@kindle.com",
+        smtp_ssl=False,  # default — uses STARTTLS
     )
-    with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP_SSL") as mock_smtp:
+    with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP") as mock_smtp:
         mock_ctx = MagicMock()
         mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_ctx)
         mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
         receipt = sender.send(_doc(), 1)
 
+    mock_ctx.starttls.assert_called_once()
     mock_ctx.send_message.assert_called_once()
     assert receipt.message_id == "<smtp-test>"
     assert receipt.attempt_no == 1
 
 
-def test_send_ssl_login_called() -> None:
-    sender = KindleEmailSender(user="u@gmail.com", password="pw", kindle_email="k@kindle.com")
+def test_send_ssl_mode() -> None:
+    sender = KindleEmailSender(
+        user="u@gmail.com", password="pw", kindle_email="k@kindle.com", smtp_ssl=True
+    )
     with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP_SSL") as mock_smtp:
         mock_ctx = MagicMock()
         mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_ctx)
         mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
         sender.send(_doc(), 1)
+    mock_ctx.login.assert_called_once_with("u@gmail.com", "pw")
+    mock_ctx.starttls.assert_not_called()
+
+
+def test_send_starttls_login_called() -> None:
+    sender = KindleEmailSender(user="u@gmail.com", password="pw", kindle_email="k@kindle.com")
+    with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP") as mock_smtp:
+        mock_ctx = MagicMock()
+        mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_ctx)
+        mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
+        sender.send(_doc(), 1)
+    mock_ctx.starttls.assert_called_once()
     mock_ctx.login.assert_called_once_with("u@gmail.com", "pw")
