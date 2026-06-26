@@ -12,7 +12,7 @@ IMAP (Gmail)  →  Parser  →  Newsletter  →  Cover (Pillow)  →  EPUB (eboo
                                                                                                    SQLite state DB
 ```
 
-1. Every hour the script wakes up and checks Gmail IMAP for today's TLDR email.
+1. Every 3 hours the script wakes up and checks Gmail IMAP for today's TLDR email.
 2. The email is parsed — sponsors removed, tracking links unwrapped — and rendered as a clean EPUB with a randomly-generated cover (1200×1800, random colour and pattern each run).
 3. The EPUB is validated with EPUBCheck, then emailed to your `@kindle.com` address.
 4. Amazon processes it asynchronously. On failure a bounce email arrives; the script detects it on the next run and retries (max 3 attempts). After 3 failures you get a dead-letter notification with the EPUB attached for manual sideloading.
@@ -131,7 +131,7 @@ Sends a test email from the dedicated Gmail to `ALERT_RECIPIENT`. Use this to ve
 #### `build`
 
 ```sh
-.venv/bin/python -m newsletter_kindle build path/to/email.eml [--source tldr] [--output /tmp]
+.venv/bin/python -m newsletter_kindle build path/to/email.eml [--source tldr] [--config config.yaml] [--output /tmp]
 ```
 
 Parses a local `.eml` file and writes an EPUB to the output directory. Does not touch IMAP, SQLite, or Kindle — useful for testing the parser and cover generator against a real email.
@@ -139,7 +139,7 @@ Parses a local `.eml` file and writes an EPUB to the output directory. Does not 
 ### Tests
 
 ```sh
-pytest                  # run all tests (85% coverage gate)
+pytest                  # run all tests (75% coverage gate)
 pytest -v -k test_cover # run specific tests
 ```
 
@@ -216,17 +216,18 @@ senders:
 
 ### Add a new newsletter source (e.g. TLDR AI)
 
-Edit `config.yaml` — uncomment the `tldr-ai` entry and set `enabled: true`. If the email format differs from TLDR, add `src/newsletter_kindle/parsers/tldr_ai_parser.py` implementing the `Parser` ABC.
+Edit `config.yaml` — uncomment the `tldr-ai` entry and set `enabled: true`. If the email format differs from TLDR, add `src/newsletter_kindle/parsers/tldr_ai_parser.py` implementing the `Parser` ABC, then wire it up in `_process_source()` in `src/newsletter_kindle/pipeline.py`.
 
 ### Add a new delivery target (e.g. Kobo)
 
 1. Write `src/newsletter_kindle/delivery/kobo_sender.py` implementing the `Sender` ABC (`send()` + `reconcile()`).
-2. Register it in `src/newsletter_kindle/config.py`: add `"kobo_drop": KoboSender` to `SENDERS`.
-3. Add the sender config to `config.yaml` and point a source's `pipeline:` at `"send:kobo"`.
+2. Instantiate it in `src/newsletter_kindle/pipeline.py` alongside the existing `KindleEmailSender`.
+3. Add any required credentials to `.env` and `.env.example`.
 
 ### Add a non-email source (e.g. RSS)
 
-Write `src/newsletter_kindle/sources/rss_source.py` implementing `Source.fetch_new()`, register in `SOURCES`, reference its `type:` in `config.yaml`.
+1. Write `src/newsletter_kindle/sources/rss_source.py` implementing `Source.fetch_new()`.
+2. Add a new source block in `config.yaml` and wire it up in `_process_source()` in `pipeline.py`.
 
 ---
 
