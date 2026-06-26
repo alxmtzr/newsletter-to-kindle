@@ -41,7 +41,7 @@ def _follow_redirect(url: str) -> str:
         req = urllib.request.Request(url, method="HEAD")
         req.add_header("User-Agent", "Mozilla/5.0")
         with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.url
+            return str(resp.url)
     except Exception:
         return url
 
@@ -55,11 +55,11 @@ def _is_sponsor(element: Tag) -> bool:
 
 def _extract_date(soup: BeautifulSoup) -> str:
     span = soup.find("span", id="date")
-    if span:
+    if span and isinstance(span, Tag):
         return span.get_text(strip=True)
     # fallback: look for a date-like string in common patterns
     for tag in soup.find_all(string=re.compile(r"\d{4}-\d{2}-\d{2}")):
-        m = re.search(r"\d{4}-\d{2}-\d{2}", tag)
+        m = re.search(r"\d{4}-\d{2}-\d{2}", str(tag))
         if m:
             return m.group(0)
     return datetime.now(UTC).strftime("%Y-%m-%d")
@@ -92,7 +92,7 @@ def _extract_sections(soup: BeautifulSoup) -> list[Section]:
                 continue
 
             title_text: str = anchor.get_text(strip=True)
-            raw_url: str = anchor.get("href", "")  # type: ignore[assignment]
+            raw_url: str = str(anchor.get("href", "")) if isinstance(anchor, Tag) else ""
             real_url = _unwrap_url(raw_url)
 
             read_time = ""
@@ -159,7 +159,7 @@ class TldrParser(Parser):
             author=str(metadata.get("author", "TLDR")),
             author_sort=str(metadata.get("author_sort", "")),
             publisher=str(metadata.get("publisher", "TLDR Newsletter")),
-            subjects=list(metadata.get("subjects", [])),  # type: ignore[arg-type]
+            subjects=[str(s) for s in (metadata.get("subjects") or [])],  # type: ignore[attr-defined]
             language=str(metadata.get("language", "en")),
             rights=str(metadata.get("rights", "")),
         )

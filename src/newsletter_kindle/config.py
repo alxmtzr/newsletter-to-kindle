@@ -36,4 +36,5 @@ def _resolve_env(value: Any) -> Any:
 def load_config(path: Path | str = "config.yaml") -> dict[str, Any]:
     text = Path(path).read_text(encoding="utf-8")
     raw: dict[str, Any] = yaml.safe_load(text)
-    return _resolve_env(raw)
+    result: dict[str, Any] = _resolve_env(raw)
+    return result

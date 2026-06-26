@@ -67,7 +67,7 @@ def _load_font(name: str, size: int) -> ImageFont.FreeTypeFont:
     path = _ASSETS / name
     if path.exists():
         return ImageFont.truetype(str(path), size)
-    return ImageFont.load_default(size=size)
+    return ImageFont.load_default(size=size)  # type: ignore[return-value]
 
 
 def generate_cover(newsletter: Newsletter) -> bytes:

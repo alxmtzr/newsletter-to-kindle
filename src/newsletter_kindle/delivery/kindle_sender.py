@@ -100,7 +100,7 @@ class KindleEmailSender(Sender):
                         db.set_status(message_id, "confirmed_failed")
                         # Move bounce to kindle-bounces label
                         with contextlib.suppress(Exception):
-                            mb.flag([msg.uid], ["kindle-bounces"], True)
+                            mb.flag([str(msg.uid)], ["kindle-bounces"], True)
                         log.warning("reconcile.bounce", message_id=message_id, reason=subject)
         except Exception as exc:
             log.error("reconcile.imap_error", error=str(exc))

@@ -35,7 +35,9 @@ class ImapEmailSource(Source):
         with MailBox(self._host).login(self._user, self._password) as mb:
             mb.folder.set(self._folder)
             for msg in mb.fetch(AND(from_=self._from_address, seen=False), mark_seen=False):
-                mid = msg.headers.get("message-id", [None])[0] or msg.uid
+                raw_headers: dict[str, list[str]] = dict(msg.headers)
+                mid_list = raw_headers.get("message-id", [])
+                mid: str = (mid_list[0] if mid_list else None) or str(msg.uid)
                 if mid in known_ids:
                     log.debug("imap.skip_known", message_id=mid)
                     continue

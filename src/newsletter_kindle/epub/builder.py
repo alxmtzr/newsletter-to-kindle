@@ -4,7 +4,7 @@ import uuid
 from pathlib import Path
 
 import structlog
-from ebooklib import epub
+from ebooklib import epub  # type: ignore[import-untyped]
 
 from newsletter_kindle.epub.cover import generate_cover
 from newsletter_kindle.models import Document, Newsletter
