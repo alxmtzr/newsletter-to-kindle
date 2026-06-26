@@ -31,12 +31,7 @@ Before running, complete these one-time manual steps:
    cp .env.example .env
    # edit .env
    ```
-7. **Set git identity** (local to this repo, keeps your work email off public commits):
-   ```sh
-   git config user.name "alxmtzr"
-   git config user.email "dev.alxmtzr@gmail.com"
-   ```
-8. **Install pre-commit hooks**:
+7. **Install pre-commit hooks**:
    ```sh
    pip install pre-commit && pre-commit install
    ```
