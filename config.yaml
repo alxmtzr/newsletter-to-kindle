@@ -1,0 +1,55 @@
+sources:
+  - name: tldr
+    type: imap_email
+    enabled: true
+    match:
+      from: dan@tldrnewsletter.com
+    parser: tldr_parser
+    metadata:
+      title_prefix: "TLDR"
+      author: "Dan Ni"
+      author_sort: "Ni, Dan"
+      publisher: "TLDR Newsletter"
+      subjects:
+        - Newsletter
+        - Technology
+      language: "en"
+      rights: "© TLDR Newsletter. Personal archival copy."
+    pipeline:
+      - build_epub
+      - validate_epub
+      - "send:kindle"
+
+  # Uncomment to enable TLDR AI once you subscribe with the dedicated Gmail
+  # - name: tldr-ai
+  #   type: imap_email
+  #   enabled: false
+  #   match:
+  #     from: dan@tldr.tech
+  #   parser: tldr_parser
+  #   metadata:
+  #     title_prefix: "TLDR AI"
+  #     author: "Andrew Tate"
+  #     author_sort: "Tate, Andrew"
+  #     publisher: "TLDR Newsletter"
+  #     subjects:
+  #       - Newsletter
+  #       - AI
+  #     language: "en"
+  #     rights: "© TLDR Newsletter. Personal archival copy."
+  #   pipeline:
+  #     - build_epub
+  #     - validate_epub
+  #     - "send:kindle"
+
+senders:
+  kindle:
+    type: kindle_email
+    to: ${KINDLE_EMAIL}
+    from: ${GMAIL_USER}
+
+  # Example: future Kobo sender
+  # kobo:
+  #   type: dropbox_drop
+  #   token: ${DROPBOX_TOKEN}
+  #   folder: "/Apps/Rakuten Kobo/"

@@ -1,0 +1,89 @@
+Return-Path: <dan@tldrnewsletter.com>
+Delivered-To: test@example.com
+From: Dan Ni <dan@tldrnewsletter.com>
+To: test@example.com
+Subject: TLDR - The latest tech news and developer resources (2024-01-15)
+Message-ID: <test-fixture-001@tldrnewsletter.com>
+Date: Mon, 15 Jan 2024 08:00:00 +0000
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<html lang="en"><head><meta charset="UTF-8"><title>TLDR</title></head>
+<body>
+<div class="text-block">
+  <span id="date">2024-01-15</span>
+</div>
+
+<div class="text-block">
+  <span style="font-size: 36px">⚡</span>
+</div>
+<div class="text-block">
+  <h1>BIG TECH &amp; STARTUPS</h1>
+</div>
+
+<div class="text-block">
+  <a href="https://tracking.tldrnewsletter.com/CL0/test001/1/SANITIZED">
+    Apple Announces New Developer Tools (4 minute read)
+  </a>
+  <br/>
+  <span style="font-family: Helvetica; font-size: 14px;">
+    Apple has released a new set of developer tools that make it easier to build cross-platform apps.
+    The tools include improved debugging support and faster build times.
+  </span>
+</div>
+
+<div class="text-block">
+  <a href="https://tracking.tldrnewsletter.com/CL0/test002/1/SANITIZED">
+    Google DeepMind Releases New Research (3 minute read)
+  </a>
+  <br/>
+  <span style="font-family: Helvetica; font-size: 14px;">
+    Researchers at Google DeepMind have published new findings on efficient neural network architectures.
+  </span>
+</div>
+
+<div class="text-block">
+  <span style="font-size: 36px">🔧</span>
+</div>
+<div class="text-block">
+  <h1>SCIENCE &amp; FUTURISTIC TECHNOLOGY</h1>
+</div>
+
+<div class="text-block">
+  <a href="https://tracking.tldrnewsletter.com/CL0/test003/1/SANITIZED">
+    New Battery Technology Doubles Energy Density (5 minute read)
+  </a>
+  <br/>
+  <span style="font-family: Helvetica; font-size: 14px;">
+    Scientists at MIT have developed a new battery technology that doubles the energy density of
+    current lithium-ion batteries while maintaining safety and cycle life.
+  </span>
+</div>
+
+<div class="text-block">
+  <span style="font-size: 36px">💻</span>
+</div>
+<div class="text-block">
+  <h1>PROGRAMMING, DESIGN &amp; DATA SCIENCE</h1>
+</div>
+
+<div class="text-block">
+  <a href="https://tracking.tldrnewsletter.com/CL0/test004/1/SANITIZED">
+    Rust 2024 Edition Released (6 minute read)
+  </a>
+  <br/>
+  <span style="font-family: Helvetica; font-size: 14px;">
+    The Rust programming language has released its 2024 edition with improved async support
+    and better ergonomics for common patterns.
+  </span>
+</div>
+
+<div class="text-block" id="sponsor-block">
+  <a href="https://example.com?utm_source=tldr&amp;utm_campaign=test">
+    Sponsor: Example Product
+  </a>
+  <br/>
+  <span style="font-family: Helvetica;">This is a sponsored message.</span>
+</div>
+
+</body></html>
