@@ -30,6 +30,8 @@ def _build_sender(sender_cfg: dict[str, Any], secrets: Secrets) -> KindleEmailSe
         user=secrets.gmail_user,
         password=secrets.gmail_app_password,
         kindle_email=secrets.kindle_email,
+        smtp_port=secrets.smtp_port,
+        smtp_ssl=secrets.smtp_ssl,
     )
 
 
@@ -45,6 +47,8 @@ def run(config_path: str = "config.yaml", dry_run: bool = False) -> None:
         password=secrets.gmail_app_password,
         alert_recipient=secrets.alert_recipient,
         healthchecks_url=secrets.healthchecks_url,
+        smtp_port=secrets.smtp_port,
+        smtp_ssl=secrets.smtp_ssl,
     )
 
     try:
@@ -134,6 +138,8 @@ def _process_source(
                 user=secrets.gmail_user,
                 password=secrets.gmail_app_password,
                 kindle_email=secrets.kindle_email,
+                smtp_port=secrets.smtp_port,
+                smtp_ssl=secrets.smtp_ssl,
             )
             sender.send(document, attempt_no)
             db.record_send(raw.message_id, attempt_no)
@@ -163,6 +169,8 @@ def _process_source(
                     user=secrets.gmail_user,
                     password=secrets.gmail_app_password,
                     kindle_email=secrets.kindle_email,
+                    smtp_port=secrets.smtp_port,
+                    smtp_ssl=secrets.smtp_ssl,
                 )
                 sender.send(document, attempt_no)
                 db.record_send(str(row["message_id"]), attempt_no)
@@ -192,6 +200,8 @@ def _process_source(
                 user=secrets.gmail_user,
                 password=secrets.gmail_app_password,
                 kindle_email=secrets.kindle_email,
+                smtp_port=secrets.smtp_port,
+                smtp_ssl=secrets.smtp_ssl,
             )
             sender.send(document, attempt_no)
             db.record_send(str(row["message_id"]), attempt_no)

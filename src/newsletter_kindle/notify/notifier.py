@@ -15,6 +15,7 @@ class Notifier:
         *,
         smtp_host: str = "smtp.gmail.com",
         smtp_port: int = 587,
+        smtp_ssl: bool = False,
         user: str,
         password: str,
         alert_recipient: str,
@@ -22,6 +23,7 @@ class Notifier:
     ) -> None:
         self._smtp_host = smtp_host
         self._smtp_port = smtp_port
+        self._smtp_ssl = smtp_ssl
         self._user = user
         self._password = password
         self._alert_recipient = alert_recipient
@@ -81,8 +83,14 @@ class Notifier:
 
     def _send(self, msg: EmailMessage) -> None:
         try:
-            with smtplib.SMTP_SSL(self._smtp_host, 465, timeout=15) as s:
-                s.login(self._user, self._password)
-                s.send_message(msg)
+            if self._smtp_ssl:
+                with smtplib.SMTP_SSL(self._smtp_host, self._smtp_port, timeout=15) as s:
+                    s.login(self._user, self._password)
+                    s.send_message(msg)
+            else:
+                with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=15) as s:
+                    s.starttls()
+                    s.login(self._user, self._password)
+                    s.send_message(msg)
         except Exception as exc:
             log.error("notifier.send_failed", error=str(exc))

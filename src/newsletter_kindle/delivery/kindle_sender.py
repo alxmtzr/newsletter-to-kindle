@@ -36,6 +36,7 @@ class KindleEmailSender(Sender):
         *,
         smtp_host: str = "smtp.gmail.com",
         smtp_port: int = 587,
+        smtp_ssl: bool = False,
         user: str,
         password: str,
         kindle_email: str,
@@ -43,6 +44,7 @@ class KindleEmailSender(Sender):
     ) -> None:
         self._smtp_host = smtp_host
         self._smtp_port = smtp_port
+        self._smtp_ssl = smtp_ssl
         self._user = user
         self._password = password
         self._kindle_email = kindle_email
@@ -61,9 +63,15 @@ class KindleEmailSender(Sender):
             filename=document.filename,
         )
 
-        with smtplib.SMTP_SSL(self._smtp_host, 465, timeout=30) as s:
-            s.login(self._user, self._password)
-            s.send_message(msg)
+        if self._smtp_ssl:
+            with smtplib.SMTP_SSL(self._smtp_host, self._smtp_port, timeout=30) as s:
+                s.login(self._user, self._password)
+                s.send_message(msg)
+        else:
+            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=30) as s:
+                s.starttls()
+                s.login(self._user, self._password)
+                s.send_message(msg)
 
         log.info(
             "kindle.sent",

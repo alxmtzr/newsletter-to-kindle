@@ -16,6 +16,9 @@ class Secrets(BaseSettings):
     kindle_email: str
     alert_recipient: str
     healthchecks_url: str = ""  # optional; empty = disabled
+    # SMTP settings — 587+STARTTLS works on most VPS, 465+SSL works on most local networks
+    smtp_port: int = 587
+    smtp_ssl: bool = False  # False = STARTTLS (port 587), True = SSL (port 465)
 
 
 def _resolve_env(value: Any) -> Any:
