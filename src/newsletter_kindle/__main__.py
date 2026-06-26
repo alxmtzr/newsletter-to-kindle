@@ -181,10 +181,20 @@ def _cmd_cleanup(args: argparse.Namespace) -> None:
             f" older than {args.old} days."
         )
 
-    if not args.test and args.old is None:
-        print("Nothing to do. Use --test to remove test entries,")
-        print("  or --old N to remove confirmed/dead entries older than N days.")
-        print("Example: python -m newsletter_kindle cleanup --test --old 30")
+    if args.reset_failed:
+        cur = db._conn.execute(
+            """
+            UPDATE newsletters SET status = 'validated', last_error = NULL
+            WHERE status = 'confirmed_failed'
+            """
+        )
+        count = cur.rowcount
+        db._conn.commit()
+        print(f"Reset {count} confirmed_failed rows to 'validated' — will retry on next run.")
+
+    if not args.test and args.old is None and not args.reset_failed:
+        print("Nothing to do. Use --test, --old N, or --reset-failed.")
+        print("Example: python -m newsletter_kindle cleanup --reset-failed")
 
 
 def _cmd_status(args: argparse.Namespace) -> None:
@@ -212,6 +222,20 @@ def _cmd_status(args: argparse.Namespace) -> None:
 
     db = StateDB(args.db)
     rows = db.recent(limit=args.limit)
+
+    if args.full:
+        # Full mode — show complete error for each row that has one
+        for row in rows:
+            print(f"{'─' * 80}")
+            print(f"ID:       {row['message_id']}")
+            print(f"Source:   {row['source']}")
+            print(f"Status:   {row['status']}  (attempts: {row['attempts']})")
+            print(f"Received: {_fmt_ts(row['received_at'])}")
+            if row["last_error"]:
+                print(f"Error:\n{row['last_error']}")
+        print(f"{'─' * 80}")
+        return
+
     header = (
         f"{'MESSAGE_ID':<45} {'SOURCE':<12} {'STATUS':<18} "
         f"{'ATTEMPTS':<9} {'RECEIVED':<24} {'ERROR'}"
@@ -262,11 +286,17 @@ def main() -> None:
     p_cleanup.add_argument(
         "--old", type=int, metavar="DAYS", help="Remove confirmed/dead entries older than N days"
     )
+    p_cleanup.add_argument(
+        "--reset-failed",
+        action="store_true",
+        help="Reset confirmed_failed rows to validated so they retry on next run",
+    )
     p_cleanup.set_defaults(func=_cmd_cleanup)
 
     p_status = sub.add_parser("status", help="Show recent newsletter state")
     p_status.add_argument("--db", default="data/state.db")
     p_status.add_argument("--limit", type=int, default=20)
+    p_status.add_argument("--full", action="store_true", help="Show full error tracebacks")
     p_status.set_defaults(func=_cmd_status)
 
     args = parser.parse_args()
