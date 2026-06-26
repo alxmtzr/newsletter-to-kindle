@@ -18,6 +18,11 @@ htmlcov/
 *.epub
 !tests/fixtures/**/*.epub
 
+# Generated cover images
+*.jpg
+*.jpeg
+!src/**/*.jpg
+
 # Runtime data
 data/
 
