@@ -36,6 +36,7 @@ def _resolve_env(value: Any) -> Any:
 def load_config(path: Path | str = "config.yaml") -> dict[str, Any]:
     # Load .env into os.environ so ${VAR} references in config.yaml resolve correctly
     from dotenv import load_dotenv
+
     load_dotenv(override=False)
 
     text = Path(path).read_text(encoding="utf-8")
