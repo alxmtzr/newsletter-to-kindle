@@ -154,13 +154,20 @@ def _cmd_cleanup(args: argparse.Namespace) -> None:
         db._conn.commit()
         print(f"Removed {removed} test-kindle rows.")
 
-    if args.old is not None:
+    if args.all:
+        db._conn.executescript(
+            "DELETE FROM send_attempts; DELETE FROM newsletters; DELETE FROM link_cache;"
+        )
+        db._conn.commit()
+        print("Wiped entire state DB (send_attempts, newsletters, link_cache).")
+
+    elif args.old is not None:
         cur = db._conn.execute(
             """
             DELETE FROM send_attempts WHERE message_id IN (
                 SELECT message_id FROM newsletters
                 WHERE status IN ('confirmed_ok', 'dead_letter')
-                AND received_at < date('now', ?)
+                AND date(received_at) <= date('now', ?)
             )
             """,
             (f"-{args.old} days",),
@@ -170,7 +177,7 @@ def _cmd_cleanup(args: argparse.Namespace) -> None:
             """
             DELETE FROM newsletters
             WHERE status IN ('confirmed_ok', 'dead_letter')
-            AND received_at < date('now', ?)
+            AND date(received_at) <= date('now', ?)
             """,
             (f"-{args.old} days",),
         )
@@ -192,9 +199,12 @@ def _cmd_cleanup(args: argparse.Namespace) -> None:
         db._conn.commit()
         print(f"Reset {count} confirmed_failed rows to 'validated' — will retry on next run.")
 
-    if not args.test and args.old is None and not args.reset_failed:
-        print("Nothing to do. Use --test, --old N, or --reset-failed.")
-        print("Example: python -m newsletter_kindle cleanup --reset-failed")
+    if not args.test and args.old is None and not args.reset_failed and not args.all:
+        print("Nothing to do. Use --test, --old N, --reset-failed, or --all.")
+        print("Examples:")
+        print("  cleanup --old 0           # remove today's confirmed/dead entries")
+        print("  cleanup --reset-failed    # reset failed rows for retry")
+        print("  cleanup --all             # wipe entire state DB")
 
 
 def _cmd_status(args: argparse.Namespace) -> None:
@@ -290,6 +300,11 @@ def main() -> None:
         "--reset-failed",
         action="store_true",
         help="Reset confirmed_failed rows to validated so they retry on next run",
+    )
+    p_cleanup.add_argument(
+        "--all",
+        action="store_true",
+        help="Wipe entire state DB — newsletters, send attempts, link cache",
     )
     p_cleanup.set_defaults(func=_cmd_cleanup)
 
