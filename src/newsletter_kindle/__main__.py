@@ -146,13 +146,9 @@ def _cmd_cleanup(args: argparse.Namespace) -> None:
     removed = 0
 
     if args.test:
-        cur = db._conn.execute(
-            "DELETE FROM send_attempts WHERE message_id LIKE '<test-kindle-%'"
-        )
+        cur = db._conn.execute("DELETE FROM send_attempts WHERE message_id LIKE '<test-kindle-%'")
         removed += cur.rowcount
-        cur = db._conn.execute(
-            "DELETE FROM newsletters WHERE message_id LIKE '<test-kindle-%'"
-        )
+        cur = db._conn.execute("DELETE FROM newsletters WHERE message_id LIKE '<test-kindle-%'")
         removed += cur.rowcount
         db._conn.commit()
         print(f"Removed {removed} test-kindle rows.")
@@ -241,8 +237,9 @@ def main() -> None:
     p_cleanup = sub.add_parser("cleanup", help="Remove entries from the state DB")
     p_cleanup.add_argument("--db", default="data/state.db")
     p_cleanup.add_argument("--test", action="store_true", help="Remove test-kindle entries")
-    p_cleanup.add_argument("--old", type=int, metavar="DAYS",
-                            help="Remove confirmed/dead entries older than N days")
+    p_cleanup.add_argument(
+        "--old", type=int, metavar="DAYS", help="Remove confirmed/dead entries older than N days"
+    )
     p_cleanup.set_defaults(func=_cmd_cleanup)
 
     p_status = sub.add_parser("status", help="Show recent newsletter state")
