@@ -92,6 +92,18 @@ class StateDB:
         ).fetchall()
         return {r["message_id"] for r in rows}
 
+    def pending_sends(self) -> list[sqlite3.Row]:
+        """Newsletters that are validated but never sent (e.g. after a dry-run)."""
+        return self._conn.execute(
+            """
+            SELECT n.message_id, n.epub_path, n.source
+            FROM newsletters n
+            LEFT JOIN send_attempts sa ON sa.message_id = n.message_id
+            WHERE n.status = 'validated'
+            AND sa.id IS NULL
+            """
+        ).fetchall()
+
     def pending_retries(self) -> list[sqlite3.Row]:
         """Newsletters stuck in confirmed_failed with fewer than 3 attempts."""
         return self._conn.execute(

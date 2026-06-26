@@ -144,6 +144,34 @@ def _process_source(
             db.set_status(raw.message_id, "confirmed_failed", last_error=tb[:2000])
             log.error("pipeline.source_error", message_id=raw.message_id, traceback=tb)
 
+    # Send validated-but-unsent rows (e.g. left over from a previous dry-run)
+    if not dry_run:
+        for row in db.pending_sends():
+            epub_path = Path(str(row["epub_path"])) if row["epub_path"] else None
+            if not epub_path or not epub_path.exists():
+                log.warning("pipeline.pending_no_epub", message_id=row["message_id"])
+                continue
+            try:
+                document = Document(
+                    message_id=str(row["message_id"]),
+                    data=epub_path.read_bytes(),
+                    mime_type="application/epub+zip",
+                    filename=epub_path.name,
+                )
+                attempt_no = db.attempt_count(str(row["message_id"])) + 1
+                sender = KindleEmailSender(
+                    user=secrets.gmail_user,
+                    password=secrets.gmail_app_password,
+                    kindle_email=secrets.kindle_email,
+                )
+                sender.send(document, attempt_no)
+                db.record_send(str(row["message_id"]), attempt_no)
+                db.set_status(str(row["message_id"]), "sent")
+            except Exception:
+                tb = traceback.format_exc()
+                db.set_status(str(row["message_id"]), "confirmed_failed", last_error=tb[:2000])
+                log.error("pipeline.pending_send_error", message_id=row["message_id"])
+
     # Retry failed deliveries
     for row in db.pending_retries():
         epub_path = Path(str(row["epub_path"])) if row["epub_path"] else None

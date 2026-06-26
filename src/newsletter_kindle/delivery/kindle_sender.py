@@ -16,12 +16,15 @@ from newsletter_kindle.state.db import StateDB
 log = structlog.get_logger()
 
 _AMAZON_BOUNCE_SENDERS = {
+    "do-not-reply@amazon.com",
     "mailer-daemon@amazon.com",
     "noreply@amazon.com",
     "device@kindleunlimited.com",
 }
 _BOUNCE_SUBJECT_RE = re.compile(
-    r"(delivery failed|not delivered|conversion failed|document not delivered)",
+    r"(delivery failed|not delivered|conversion failed|document not delivered"
+    r"|problem mit dem|es gab ein problem|nicht zugestellt|interner fehler"
+    r"|E\d{3,4}\s*[-–]\s*Send to Kindle)",
     re.IGNORECASE,
 )
 _SUCCESS_WINDOW = timedelta(minutes=30)

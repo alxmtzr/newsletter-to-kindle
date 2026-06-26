@@ -8,9 +8,17 @@ from newsletter_kindle.state.db import StateDB
 
 
 def test_bounce_subject_regex() -> None:
+    # English patterns
     assert _BOUNCE_SUBJECT_RE.search("Delivery failed: tldr_20240115.epub")
     assert _BOUNCE_SUBJECT_RE.search("Conversion failed")
     assert _BOUNCE_SUBJECT_RE.search("Document not delivered to Kindle")
+    # German patterns (actual Amazon DE format)
+    assert _BOUNCE_SUBJECT_RE.search(
+        "Es gab ein Problem mit dem/den Dokument/en, das/die Sie zu Kindle gesendet haben."
+    )
+    assert _BOUNCE_SUBJECT_RE.search("E999 - Send to Kindle - Interner Fehler")
+    assert _BOUNCE_SUBJECT_RE.search("nicht zugestellt werden")
+    # Should not match success
     assert not _BOUNCE_SUBJECT_RE.search("Your Kindle delivery was successful")
 
 

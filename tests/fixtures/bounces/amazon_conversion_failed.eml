@@ -1,16 +1,19 @@
-Return-Path: <noreply@amazon.com>
-From: Amazon Kindle <noreply@amazon.com>
+Return-Path: <do-not-reply@amazon.com>
+From: Amazon Kindle Support <do-not-reply@amazon.com>
 To: test@example.com
-Subject: Conversion failed: tldr_20240115.epub
+Subject: Es gab ein Problem mit dem/den Dokument/en, das/die Sie zu Kindle gesendet haben.
 Message-ID: <bounce-test-001@amazon.com>
 Date: Mon, 15 Jan 2024 08:15:00 +0000
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 
-We were unable to convert the document "tldr_20240115.epub" to Kindle format.
+Liebe Kundin, lieber Kunde,
 
-Please check that:
-- The file is a valid EPUB
-- The sender address is in your approved senders list
+Folgende Dokumente, die an 08:00 Uhr, am Montag, 15. Januar 2024 MEZ gesendet wurden, konnten aufgrund von E999 - Send to Kindle - Interner Fehler, nicht zugestellt werden:
 
-Amazon Kindle Support
+* tldr_20240115.epub
+
+Wir entschuldigen uns für die Unannehmlichkeiten.
+
+Mit freundlichen Grüßen,
+Amazon Kindle-Support
