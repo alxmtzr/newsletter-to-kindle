@@ -61,7 +61,7 @@ class KindleEmailSender(Sender):
             filename=document.filename,
         )
 
-        with smtplib.SMTP(self._smtp_host, self._smtp_port) as s:
+        with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=30) as s:
             s.starttls()
             s.login(self._user, self._password)
             s.send_message(msg)
