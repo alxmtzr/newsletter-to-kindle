@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 from newsletter_kindle.models import Newsletter
 
 _ASSETS = Path(__file__).parent.parent / "assets" / "fonts"
-_W, _H = 1600, 2400
+_W, _H = 1200, 1800
 
 
 def _seed(date: str) -> int:

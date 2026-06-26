@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import io
 import uuid
+import zipfile
 from pathlib import Path
 
 import structlog
 from ebooklib import epub  # type: ignore[import-untyped]
+from PIL import Image
 
 from newsletter_kindle.epub.cover import generate_cover
 from newsletter_kindle.models import Document, Newsletter
@@ -12,6 +15,47 @@ from newsletter_kindle.models import Document, Newsletter
 log = structlog.get_logger()
 
 _STYLE_PATH = Path(__file__).parent / "style.css"
+_COVER_MAX_BYTES = 120_000  # Amazon recommends under 127KB
+_COVER_WIDTH = 1200
+_COVER_HEIGHT = 1800
+
+
+def _fix_epub(path: Path) -> None:
+    """Post-process the EPUB to fix Amazon compatibility issues:
+    - Remove <!DOCTYPE html> from all XHTML files (causes E999 on Amazon)
+    - Recompress cover image if over size limit
+    """
+    with zipfile.ZipFile(path, "r") as zin:
+        entries = {info.filename: (info, zin.read(info.filename)) for info in zin.infolist()}
+
+    fixed: dict[str, tuple[zipfile.ZipInfo, bytes]] = {}
+    for filename, (info, data) in entries.items():
+        if filename.endswith(".xhtml") or filename.endswith(".html"):
+            text = data.decode("utf-8")
+            text = text.replace("<!DOCTYPE html>\n", "").replace("<!DOCTYPE html>", "")
+            data = text.encode("utf-8")
+        elif filename == "EPUB/cover.jpg" or filename == "cover.jpg":
+            if len(data) > _COVER_MAX_BYTES:
+                img = Image.open(io.BytesIO(data))
+                resized = img.resize((_COVER_WIDTH, _COVER_HEIGHT), Image.Resampling.LANCZOS)
+                buf = io.BytesIO()
+                resized.save(buf, format="JPEG", quality=80, optimize=True)
+                data = buf.getvalue()
+                log.info("epub.cover_recompressed", size=len(data))
+        fixed[filename] = (info, data)
+
+    # Rewrite ZIP — mimetype must be first and uncompressed
+    tmp = path.with_suffix(".tmp.epub")
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+        # mimetype must be first and stored (uncompressed)
+        if "mimetype" in fixed:
+            info, data = fixed.pop("mimetype")
+            info.compress_type = zipfile.ZIP_STORED
+            zout.writestr(info, data)
+        for _filename, (info, data) in fixed.items():
+            zout.writestr(info, data)
+
+    tmp.replace(path)
 
 
 def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
@@ -108,6 +152,8 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
     filename = f"{newsletter.source_name}_{safe_date}.epub"
     out_path = output_dir / filename
     epub.write_epub(str(out_path), book)
+
+    _fix_epub(out_path)
 
     log.info("epub.built", path=str(out_path), size=out_path.stat().st_size)
     return Document(
