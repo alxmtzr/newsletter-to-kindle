@@ -50,6 +50,28 @@ def _cmd_build(args: argparse.Namespace) -> None:
     print(f"EPUB written to: {out_path}  ({doc.data.__len__()} bytes)")
 
 
+def _cmd_test_alert(args: argparse.Namespace) -> None:
+    """Send a test notification email to verify SMTP credentials and alert recipient."""
+    configure_logging("INFO")
+    from newsletter_kindle.config import Secrets
+    from newsletter_kindle.notify.notifier import Notifier
+
+    secrets = Secrets()  # type: ignore[call-arg]
+    notifier = Notifier(
+        user=secrets.gmail_user,
+        password=secrets.gmail_app_password,
+        alert_recipient=secrets.alert_recipient,
+        healthchecks_url=secrets.healthchecks_url,
+    )
+    print(f"Sending test alert to {secrets.alert_recipient} ...")
+    notifier.send_failure_email(
+        "Test alert",
+        "This is a test notification from newsletter-to-kindle.\n\n"
+        "If you received this, alert emails are working correctly.",
+    )
+    print("Done. Check your inbox.")
+
+
 def _cmd_status(args: argparse.Namespace) -> None:
     configure_logging("WARNING")
     db = StateDB(args.db)
@@ -88,6 +110,9 @@ def main() -> None:
     p_build.add_argument("--config", default="config.yaml")
     p_build.add_argument("--output", default="/tmp", help="Output directory for the EPUB")
     p_build.set_defaults(func=_cmd_build)
+
+    p_alert = sub.add_parser("test-alert", help="Send a test notification email")
+    p_alert.set_defaults(func=_cmd_test_alert)
 
     p_status = sub.add_parser("status", help="Show recent newsletter state")
     p_status.add_argument("--db", default="data/state.db")
