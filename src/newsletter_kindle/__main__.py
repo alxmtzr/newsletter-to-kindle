@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import UTC
 from pathlib import Path
 
 from newsletter_kindle.notify.logging_config import configure_logging
@@ -188,6 +189,27 @@ def _cmd_cleanup(args: argparse.Namespace) -> None:
 
 def _cmd_status(args: argparse.Namespace) -> None:
     configure_logging("WARNING")
+    import os
+    from datetime import datetime
+
+    # Display timestamps in local timezone (set via TZ env var in Docker)
+    try:
+        import zoneinfo
+
+        tz_name = os.environ.get("TZ", "UTC")
+        local_tz = zoneinfo.ZoneInfo(tz_name)
+    except Exception:
+        local_tz = UTC  # type: ignore[assignment]
+
+    def _fmt_ts(ts_str: str) -> str:
+        try:
+            dt = datetime.fromisoformat(ts_str)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=UTC)
+            return dt.astimezone(local_tz).strftime("%Y-%m-%d %H:%M %Z")
+        except Exception:
+            return ts_str[:19]
+
     db = StateDB(args.db)
     rows = db.recent(limit=args.limit)
     header = (
@@ -203,7 +225,7 @@ def _cmd_status(args: argparse.Namespace) -> None:
             f"{row['source']:<12} "
             f"{row['status']:<18} "
             f"{row['attempts']:<9} "
-            f"{row['received_at']:<24} "
+            f"{_fmt_ts(row['received_at']):<24} "
             f"{err}"
         )
 
