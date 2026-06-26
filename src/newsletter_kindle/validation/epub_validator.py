@@ -50,9 +50,7 @@ def validate_epub(document: Document) -> ValidationResult:
 
         if not report_path.exists():
             log.error("epubcheck.no_report", stderr=result.stderr[:500])
-            return ValidationResult(
-                ok=False, errors=["EPUBCheck produced no report"], warnings=[]
-            )
+            return ValidationResult(ok=False, errors=["EPUBCheck produced no report"], warnings=[])
 
         report = json.loads(report_path.read_text())
 

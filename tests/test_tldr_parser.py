@@ -89,6 +89,7 @@ def test_section_count() -> None:
 
 # --- URL unwrapping ---
 
+
 def test_unwrap_tracking_url_from_path() -> None:
     from newsletter_kindle.parsers.tldr_parser import _unwrap_url
 
@@ -116,6 +117,7 @@ def test_unwrap_tracking_url_with_query_param() -> None:
 
 
 # --- Sponsor detection ---
+
 
 def test_is_sponsor_detects_ad_domain() -> None:
     from bs4 import BeautifulSoup
@@ -155,6 +157,7 @@ def test_is_sponsor_detects_sponsor_keyword_in_text() -> None:
 
 # --- Notifier healthchecks exception handling ---
 
+
 def test_ping_success_swallows_network_error() -> None:
     import urllib.error
     from unittest.mock import patch
@@ -162,8 +165,10 @@ def test_ping_success_swallows_network_error() -> None:
     from newsletter_kindle.notify.notifier import Notifier
 
     n = Notifier(
-        user="u", password="p", alert_recipient="a@b.com",
-        healthchecks_url="https://hc-ping.com/test-uuid"
+        user="u",
+        password="p",
+        alert_recipient="a@b.com",
+        healthchecks_url="https://hc-ping.com/test-uuid",
     )
     with patch(
         "newsletter_kindle.notify.notifier.urllib.request.urlopen",
@@ -179,12 +184,13 @@ def test_ping_failure_swallows_network_error() -> None:
     from newsletter_kindle.notify.notifier import Notifier
 
     n = Notifier(
-        user="u", password="p", alert_recipient="a@b.com",
-        healthchecks_url="https://hc-ping.com/test-uuid"
+        user="u",
+        password="p",
+        alert_recipient="a@b.com",
+        healthchecks_url="https://hc-ping.com/test-uuid",
     )
     with patch(
         "newsletter_kindle.notify.notifier.urllib.request.urlopen",
         side_effect=urllib.error.URLError("timeout"),
     ):
         n.ping_failure("some error")  # must not raise
-
