@@ -9,32 +9,40 @@ from PIL import Image, ImageDraw, ImageFont
 
 from newsletter_kindle.models import Newsletter
 
+_RGB = tuple[int, int, int]
+
 _ASSETS = Path(__file__).parent.parent / "assets" / "fonts"
 _W, _H = 1200, 1800
 
+# Available background patterns — one picked randomly each generation
+_PATTERNS = ["geometric", "diagonal", "circles", "grid", "waves"]
 
-def _seed(date: str) -> int:
+
+def _seed_from_date(date: str) -> int:
     return int(hashlib.md5(date.encode()).hexdigest(), 16) % (2**32)
 
 
-def _gradient_mesh(draw: ImageDraw.ImageDraw, seed: int) -> None:
-    rng = random.Random(seed)
-    hue = rng.randint(0, 360)
+def _hue_to_rgb(hue: int) -> _RGB:
+    h = hue / 60
+    x = int(255 * (1 - abs(h % 2 - 1)))
+    sectors = [
+        (255, x, 0), (x, 255, 0), (0, 255, x),
+        (0, x, 255), (x, 0, 255), (255, 0, x),
+    ]
+    return sectors[int(h) % 6]
 
-    def hsv_to_rgb(h: int, s: float, v: float) -> tuple[int, int, int]:
-        h_f = h / 60
-        i = int(h_f)
-        f = h_f - i
-        p, q, t = v * (1 - s), v * (1 - s * f), v * (1 - s * (1 - f))
-        sectors = [(v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v), (v, p, q)]
-        r, g, b = sectors[i % 6]
-        return int(r * 255), int(g * 255), int(b * 255)
 
-    c1 = hsv_to_rgb(hue, 0.65, 0.85)
-    c2 = hsv_to_rgb((hue + 40) % 360, 0.55, 0.60)
-    c3 = hsv_to_rgb((hue + 200) % 360, 0.70, 0.25)
+def _hsv_to_rgb(h: int, s: float, v: float) -> _RGB:
+    h_f = h / 60
+    i = int(h_f)
+    f = h_f - i
+    p, q, t = v * (1 - s), v * (1 - s * f), v * (1 - s * (1 - f))
+    sectors = [(v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v), (v, p, q)]
+    r, g, b = sectors[i % 6]
+    return int(r * 255), int(g * 255), int(b * 255)
 
-    # Gradient backdrop
+
+def _draw_gradient(draw: ImageDraw.ImageDraw, c1: _RGB, c2: _RGB) -> None:
     for y in range(_H):
         t = y / _H
         r = int(c1[0] * (1 - t) + c2[0] * t)
@@ -42,25 +50,64 @@ def _gradient_mesh(draw: ImageDraw.ImageDraw, seed: int) -> None:
         b = int(c1[2] * (1 - t) + c2[2] * t)
         draw.line([(0, y), (_W, y)], fill=(r, g, b))
 
-    # Geometric mesh accents
-    for _ in range(12):
+
+def _pattern_geometric(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
+    for _ in range(14):
         x0 = rng.randint(-100, _W + 100)
         y0 = rng.randint(-100, int(_H * 0.65))
-        x1 = x0 + rng.randint(100, 500)
-        y1 = y0 + rng.randint(100, 500)
-        alpha = rng.randint(15, 45)
-        draw.rectangle([x0, y0, x1, y1], outline=(*c3, alpha), width=2)
+        x1 = x0 + rng.randint(80, 400)
+        y1 = y0 + rng.randint(80, 400)
+        alpha = rng.randint(12, 40)
+        draw.rectangle([x0, y0, x1, y1], outline=(*accent, alpha), width=2)
 
-    # Diagonal accent lines
-    for _ in range(6):
-        offset = rng.randint(0, _W)
+
+def _pattern_diagonal(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
+    for _ in range(20):
+        x = rng.randint(0, _W)
         draw.line(
-            [(offset, 0), (offset - int(_H * 0.4), int(_H * 0.65))],
-            fill=(*c3, 25),
-            width=1,
+            [(x, 0), (x - int(_H * 0.5), _H)],
+            fill=(*accent, rng.randint(15, 35)),
+            width=rng.randint(1, 3),
         )
 
-    return c3  # type: ignore[return-value]
+
+def _pattern_circles(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
+    for _ in range(10):
+        cx = rng.randint(0, _W)
+        cy = rng.randint(0, int(_H * 0.65))
+        r = rng.randint(60, 300)
+        alpha = rng.randint(10, 35)
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(*accent, alpha), width=2)
+
+
+def _pattern_grid(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
+    spacing = rng.randint(80, 160)
+    alpha = rng.randint(10, 25)
+    for x in range(0, _W, spacing):
+        draw.line([(x, 0), (x, int(_H * 0.65))], fill=(*accent, alpha), width=1)
+    for y in range(0, int(_H * 0.65), spacing):
+        draw.line([(0, y), (_W, y)], fill=(*accent, alpha), width=1)
+
+
+def _pattern_waves(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
+    import math
+    for i in range(8):
+        y_base = rng.randint(50, int(_H * 0.6))
+        amp = rng.randint(20, 80)
+        freq = rng.uniform(0.003, 0.01)
+        alpha = rng.randint(15, 40)
+        points = [(x, int(y_base + amp * math.sin(freq * x + i))) for x in range(0, _W, 4)]
+        if len(points) > 1:
+            draw.line(points, fill=(*accent, alpha), width=2)
+
+
+_PATTERN_FNS = {
+    "geometric": _pattern_geometric,
+    "diagonal": _pattern_diagonal,
+    "circles": _pattern_circles,
+    "grid": _pattern_grid,
+    "waves": _pattern_waves,
+}
 
 
 def _load_font(name: str, size: int) -> ImageFont.FreeTypeFont:
@@ -71,77 +118,67 @@ def _load_font(name: str, size: int) -> ImageFont.FreeTypeFont:
 
 
 def generate_cover(newsletter: Newsletter) -> bytes:
-    seed = _seed(newsletter.date)
+    # Date-seeded hue (consistent colour per issue) + truly random pattern each run
+    color_seed = _seed_from_date(newsletter.date)
+    color_rng = random.Random(color_seed)
+    pattern_rng = random.Random()  # truly random — different each generation
+
+    hue = color_rng.randint(0, 360)
+    c1 = _hsv_to_rgb(hue, 0.60, 0.80)
+    c2 = _hsv_to_rgb((hue + 45) % 360, 0.50, 0.55)
+    accent = _hsv_to_rgb((hue + 200) % 360, 0.65, 0.30)
+
     img = Image.new("RGB", (_W, _H), (20, 20, 30))
     draw = ImageDraw.Draw(img, "RGBA")
 
-    _gradient_mesh(draw, seed)
+    _draw_gradient(draw, c1, c2)
 
-    # Dark bottom panel
+    # Pick a random pattern
+    pattern_name = pattern_rng.choice(_PATTERNS)
+    _PATTERN_FNS[pattern_name](draw, pattern_rng, accent)
+
+    # Dark bottom panel — flush left, no gap
     panel_top = int(_H * 0.62)
     draw.rectangle([0, panel_top, _W, _H], fill=(15, 15, 22))
 
-    # Colored left spine stripe
-    rng = random.Random(seed)
-    hue = rng.randint(0, 360)
+    # Thin coloured accent bar at top of panel
     stripe_color = _hue_to_rgb(hue)
-    draw.rectangle([0, panel_top, 8, _H], fill=stripe_color)
+    draw.rectangle([0, panel_top, _W, panel_top + 6], fill=stripe_color)
 
-    # Publisher name — small all-caps above title
-    font_small = _load_font("Inter-Medium.ttf", 38)
-    source_display = newsletter.source_name.upper()
-    draw.text((60, panel_top + 55), source_display, fill=(180, 180, 200), font=font_small)
+    x = 40  # consistent left margin
 
-    # Title / main newsletter name — large bold
-    font_title = _load_font("Inter-Bold.ttf", 130)
-    title_prefix = newsletter.title.split(" — ")[0]
-    draw.text((55, panel_top + 105), title_prefix, fill=(255, 255, 255), font=font_title)
+    # Main title — single large "TLDR"
+    font_title = _load_font("Inter-Bold.ttf", 140)
+    draw.text((x, panel_top + 30), "TLDR", fill=(255, 255, 255), font=font_title)
 
-    # Date — monospace, below title
+    # Date below title
     font_date = _load_font("JetBrainsMono-Regular.ttf", 52)
-    draw.text((60, panel_top + 270), newsletter.date, fill=(160, 160, 180), font=font_date)
+    draw.text((x, panel_top + 195), newsletter.date, fill=(160, 160, 180), font=font_date)
 
-    # Divider line
-    draw.line([(55, panel_top + 345), (_W - 55, panel_top + 345)], fill=(60, 60, 80), width=1)
+    # Divider
+    draw.line([(x, panel_top + 270), (_W - x, panel_top + 270)], fill=(55, 55, 70), width=1)
 
-    # Headline peek — first 3 stories, ASCII bullet, truncated to fit width
-    font_story = _load_font("Inter-Regular.ttf", 36)
+    # Headline peek — first 3 stories, ASCII only
+    font_story = _load_font("Inter-Regular.ttf", 34)
     stories: list[str] = []
     for section in newsletter.sections:
         for story in section.stories:
             if len(stories) >= 3:
                 break
-            # Strip emoji from headlines — PIL default font can't render them
             clean = story.title.encode("ascii", errors="ignore").decode("ascii").strip()
             if not clean:
-                clean = story.title[:60]
-            # Truncate to fit panel width
-            max_chars = 55
-            if len(clean) > max_chars:
-                clean = clean[:max_chars].rstrip() + "..."
+                clean = story.title[:55]
+            if len(clean) > 52:
+                clean = clean[:52].rstrip() + "..."
             stories.append(clean)
         if len(stories) >= 3:
             break
 
-    y_offset = panel_top + 370
+    y_offset = panel_top + 295
     for headline in stories:
-        draw.text((60, y_offset), f"- {headline}", fill=(130, 130, 160), font=font_story)
-        y_offset += 62
+        draw.text((x, y_offset), f"- {headline}", fill=(120, 120, 150), font=font_story)
+        y_offset += 56
 
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=92, optimize=True)
+    img.save(buf, format="JPEG", quality=88, optimize=True)
     return buf.getvalue()
-
-
-def _hue_to_rgb(hue: int) -> tuple[int, int, int]:
-    h = hue / 60
-    x = int(255 * (1 - abs(h % 2 - 1)))
-    sectors = [
-        (255, x, 0),
-        (x, 255, 0),
-        (0, 255, x),
-        (0, x, 255),
-        (x, 0, 255),
-        (255, 0, x),
-    ]
-    return sectors[int(h) % 6]
