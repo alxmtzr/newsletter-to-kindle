@@ -31,10 +31,18 @@ class ImapEmailSource(Source):
         self._folder = folder
 
     def fetch_new(self, known_ids: set[str]) -> Iterator[RawMessage]:
-        log.info("imap.connect", host=self._host, user=self._user)
+        today = datetime.now(UTC).date()
+        log.info("imap.connect", host=self._host, user=self._user, date=str(today))
         with MailBox(self._host).login(self._user, self._password) as mb:
             mb.folder.set(self._folder)
-            for msg in mb.fetch(AND(from_=self._from_address, seen=False), mark_seen=False):
+            # Fetch today's emails only — date_gte filters to today, then we
+            # discard anything with a timestamp from tomorrow onwards (shouldn't
+            # happen, but makes the intent explicit)
+            criteria = AND(from_=self._from_address, date_gte=today)
+            for msg in mb.fetch(criteria, mark_seen=False):
+                msg_date = (msg.date or datetime.now(UTC)).date()
+                if msg_date != today:
+                    continue
                 raw_headers: dict[str, list[str]] = dict(msg.headers)
                 mid_list = raw_headers.get("message-id", [])
                 mid: str = (mid_list[0] if mid_list else None) or str(msg.uid)
