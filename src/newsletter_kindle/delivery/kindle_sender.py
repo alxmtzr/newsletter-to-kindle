@@ -81,10 +81,14 @@ class KindleEmailSender(Sender):
         self._confirm_stale_sends(db)
 
     def _reconcile_bounces(self, db: StateDB) -> None:
+        # Skip entirely if there are no open sends to reconcile
+        if not db.open_sends():
+            return
         log.info("reconcile.checking_bounces")
         try:
+            since = (datetime.now(UTC) - timedelta(days=2)).date()
             with MailBox(self._imap_host).login(self._user, self._password) as mb:
-                for msg in mb.fetch(AND(seen=False), mark_seen=False):
+                for msg in mb.fetch(AND(date_gte=since), mark_seen=False):
                     from_addr = (msg.from_ or "").lower()
                     subject = msg.subject or ""
                     if from_addr not in _AMAZON_BOUNCE_SENDERS and not _BOUNCE_SUBJECT_RE.search(

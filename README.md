@@ -41,10 +41,28 @@ Before running, complete these one-time manual steps:
 ```sh
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-# Dry run (connects to IMAP, builds EPUB, skips the SMTP send)
-python -m newsletter_kindle run --dry-run
-# Check state
-python -m newsletter_kindle status
+```
+
+### Dry run (no Kindle send)
+
+Connects to Gmail IMAP, parses today's email, builds the EPUB — but skips the actual SMTP send to Kindle. Safe to run anytime.
+
+```sh
+.venv/bin/python -m newsletter_kindle run --dry-run
+```
+
+### Real run
+
+Sends the EPUB to Kindle.
+
+```sh
+.venv/bin/python -m newsletter_kindle run
+```
+
+### Check processing state
+
+```sh
+.venv/bin/python -m newsletter_kindle status
 ```
 
 ## Running on VPS (Docker)
@@ -58,15 +76,33 @@ cp .env.example .env && chmod 600 .env
 
 # Start
 docker compose up -d --build
+```
 
-# Logs
-docker logs -f newsletter-kindle
+### Dry run inside the container
 
-# Status
+```sh
+docker compose exec app python -m newsletter_kindle run --dry-run
+```
+
+### Real run inside the container
+
+```sh
+docker compose exec app python -m newsletter_kindle run
+```
+
+### Check processing state inside the container
+
+```sh
 docker compose exec app python -m newsletter_kindle status
 ```
 
-Deploy is automated: push to `main` → GitHub Actions SSHes into the VPS, `git pull`, `docker compose build`, `docker compose up -d`.
+### Logs
+
+```sh
+docker logs -f newsletter-kindle
+```
+
+The cron job runs automatically every hour. Deploy is automated: push to `main` → CI runs → if all jobs pass → GitHub Actions SSHes into the VPS and redeploys.
 
 ## Adding TLDR AI (or another source)
 
