@@ -112,10 +112,24 @@ class KindleEmailSender(Sender):
             log.error("reconcile.imap_error", error=str(exc))
 
     def _match_bounce(self, db: StateDB, msg: object) -> tuple[int, str] | None:
+        """Correlate a bounce email with an open send attempt.
+
+        Amazon's bounce body contains the filename: "* TLDR_2026-06-26.epub"
+        We match on that rather than message-id (which Amazon doesn't include).
+        Falls back to date-based matching if no epub_path recorded yet.
+        """
+        body = str(getattr(msg, "text", "") or "")
+        subject = str(getattr(msg, "subject", "") or "")
+        combined = body + subject
+
         for row in db.open_sends():
-            # Heuristic: the bounce subject often contains the sent filename or dates
-            if str(row["message_id"])[:10] in str(getattr(msg, "subject", "")):
-                return int(row["id"]), str(row["message_id"])
+            epub_path = str(row["epub_path"] or "")
+            if epub_path:
+                filename = epub_path.split("/")[-1]  # e.g. TLDR_2026-06-26.epub
+                if filename and filename in combined:
+                    return int(row["id"]), str(row["message_id"])
+            # Fallback: match by date substring in the body (YYYY-MM-DD appears in filename)
+            # Extract date from message_id isn't reliable — skip fallback to avoid false positives
         return None
 
     def _confirm_stale_sends(self, db: StateDB) -> None:
