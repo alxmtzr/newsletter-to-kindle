@@ -76,31 +76,16 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
 
     book = epub.EpubBook()
 
+    # Use raw UUID without urn:uuid: prefix — matches working POC
     identifier = str(uuid.uuid5(uuid.NAMESPACE_URL, newsletter.message_id))
-    book.set_identifier(f"urn:uuid:{identifier}")
+    book.set_identifier(identifier)
     book.set_title(newsletter.title)
     book.set_language(newsletter.language)
+    book.add_author(newsletter.author or "TLDR Newsletter")
 
-    if newsletter.author:
-        book.add_author(newsletter.author, file_as=newsletter.author_sort or newsletter.author)
-    if newsletter.publisher:
-        book.add_metadata("DC", "publisher", newsletter.publisher)
-    if newsletter.date:
-        book.add_metadata("DC", "date", newsletter.date)
-    if newsletter.rights:
-        book.add_metadata("DC", "rights", newsletter.rights)
-    book.add_metadata("DC", "source", newsletter.source_name)
-
-    first_stories = [s.title for sec in newsletter.sections for s in sec.stories][:3]
-    if first_stories:
-        book.add_metadata("DC", "description", " | ".join(first_stories))
-
-    for subject in newsletter.subjects:
-        book.add_metadata("DC", "subject", subject)
-
-    # Cover — no create_page to avoid ebooklib's auto-generated cover.xhtml
+    # Cover — with create_page=True to match the working POC
     cover_bytes = generate_cover(newsletter)
-    book.set_cover("cover.jpg", cover_bytes, create_page=False)
+    book.set_cover("cover.jpg", cover_bytes, create_page=True)
 
     style = epub.EpubItem(
         uid="style",
