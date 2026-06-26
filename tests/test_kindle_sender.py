@@ -21,7 +21,7 @@ def test_send_uses_smtp() -> None:
         password="pw",
         kindle_email="me@kindle.com",
     )
-    with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP") as mock_smtp:
+    with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP_SSL") as mock_smtp:
         mock_ctx = MagicMock()
         mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_ctx)
         mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
@@ -32,12 +32,11 @@ def test_send_uses_smtp() -> None:
     assert receipt.attempt_no == 1
 
 
-def test_send_starttls_called() -> None:
+def test_send_ssl_login_called() -> None:
     sender = KindleEmailSender(user="u@gmail.com", password="pw", kindle_email="k@kindle.com")
-    with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP") as mock_smtp:
+    with patch("newsletter_kindle.delivery.kindle_sender.smtplib.SMTP_SSL") as mock_smtp:
         mock_ctx = MagicMock()
         mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_ctx)
         mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
         sender.send(_doc(), 1)
-    mock_ctx.starttls.assert_called_once()
     mock_ctx.login.assert_called_once_with("u@gmail.com", "pw")

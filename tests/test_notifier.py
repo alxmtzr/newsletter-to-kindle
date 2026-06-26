@@ -38,7 +38,7 @@ def test_ping_failure_no_url() -> None:
 
 def test_send_failure_email_uses_smtp() -> None:
     n = _notifier()
-    with patch("newsletter_kindle.notify.notifier.smtplib.SMTP") as mock_smtp:
+    with patch("newsletter_kindle.notify.notifier.smtplib.SMTP_SSL") as mock_smtp:
         mock_ctx = MagicMock()
         mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_ctx)
         mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
@@ -48,7 +48,7 @@ def test_send_failure_email_uses_smtp() -> None:
 
 def test_send_dead_letter_attaches_epub() -> None:
     n = _notifier()
-    with patch("newsletter_kindle.notify.notifier.smtplib.SMTP") as mock_smtp:
+    with patch("newsletter_kindle.notify.notifier.smtplib.SMTP_SSL") as mock_smtp:
         mock_ctx = MagicMock()
         mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_ctx)
         mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
