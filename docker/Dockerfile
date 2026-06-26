@@ -1,34 +1,33 @@
-# Stage 1: Python builder
+# Stage 1: Python builder — install dependencies
 FROM python:3.12-slim AS builder
 WORKDIR /app
 COPY pyproject.toml ./
+COPY src/ src/
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e ".[dev]" 2>/dev/null || \
-    pip install --no-cache-dir -e .
+    pip install --no-cache-dir .
 
 # Stage 2: Runtime with JRE for EPUBCheck
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
-# Install Python
+# Install Python + pip from Alpine repos
 RUN apk add --no-cache python3 py3-pip
 
-# Copy installed Python packages and app from builder
-COPY --from=builder /usr/local/lib/python3.12 /usr/local/lib/python3.12
-COPY --from=builder /usr/local/bin/python3.12 /usr/local/bin/python3.12
-RUN ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+# Copy installed Python packages from builder into the Alpine Python's site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/lib/python3.12/site-packages
 
 # EPUBCheck
 ARG EPUBCHECK_VERSION=5.1.0
-RUN mkdir -p /opt/epubcheck && \
+RUN apk add --no-cache wget unzip && \
+    mkdir -p /opt/epubcheck && \
     wget -q "https://github.com/w3c/epubcheck/releases/download/v${EPUBCHECK_VERSION}/epubcheck-${EPUBCHECK_VERSION}.zip" \
          -O /tmp/epubcheck.zip && \
     unzip /tmp/epubcheck.zip -d /tmp/epubcheck_extract && \
-    cp /tmp/epubcheck_extract/epubcheck-${EPUBCHECK_VERSION}/epubcheck.jar /opt/epubcheck/ && \
-    rm -rf /tmp/epubcheck.zip /tmp/epubcheck_extract
+    cp "/tmp/epubcheck_extract/epubcheck-${EPUBCHECK_VERSION}/epubcheck.jar" /opt/epubcheck/ && \
+    rm -rf /tmp/epubcheck.zip /tmp/epubcheck_extract && \
+    apk del wget unzip
 
 # App source
 WORKDIR /app
-COPY --from=builder /app /app
 COPY src/ src/
 COPY config.yaml .
 
