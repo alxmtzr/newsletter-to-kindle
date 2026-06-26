@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html as _html
 import io
+import re
 import uuid
 import zipfile
 from pathlib import Path
@@ -55,6 +56,14 @@ def _fix_epub(path: Path) -> None:
     tmp.replace(path)
 
 
+def _strip_emoji(text: str) -> str:
+    """Remove emoji from text — Amazon's converter chokes on emoji in XHTML titles."""
+    # Matches emoji in both BMP (U+2600-U+27FF) and supplementary planes
+    return re.sub(
+        r"[☀-⟿⬀-⯿\U0001F000-\U0010FFFF]", "", text
+    ).strip()
+
+
 def _chapter_html(title: str, body: str) -> bytes:
     """Minimal valid XHTML — matches the POC that successfully converted on Amazon."""
     escaped_title = _html.escape(title)
@@ -103,8 +112,9 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
             continue
         slug = f"section_{i}"
         title = f"{section.emoji} {section.title}".strip() if section.emoji else section.title
+        title_safe = _strip_emoji(title)  # no emoji in XHTML title/NCX — Amazon chokes
 
-        parts = [f"<h1>{_html.escape(title)}</h1>"]
+        parts = [f"<h1>{_html.escape(title)}</h1>"]  # keep emoji in body h1
         for story in section.stories:
             read_time_html = (
                 f' <span class="read-time">({_html.escape(story.read_time)})</span>'
@@ -120,12 +130,12 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
                 f"</div>"
             )
 
-        chapter = epub.EpubHtml(title=title, file_name=f"{slug}.xhtml", lang="en")
-        chapter.content = _chapter_html(title, "\n".join(parts))
+        chapter = epub.EpubHtml(title=title_safe, file_name=f"{slug}.xhtml", lang="en")
+        chapter.content = _chapter_html(title_safe, "\n".join(parts))
         chapter.add_item(style)
         book.add_item(chapter)
         chapters.append(chapter)
-        toc.append(epub.Link(f"{slug}.xhtml", title, slug))
+        toc.append(epub.Link(f"{slug}.xhtml", title_safe, slug))
 
     book.toc = toc
     book.spine = ["nav"] + chapters
