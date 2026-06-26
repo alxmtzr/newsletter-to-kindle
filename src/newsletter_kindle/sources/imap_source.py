@@ -35,11 +35,11 @@ class ImapEmailSource(Source):
         log.info("imap.connect", host=self._host, user=self._user, date=str(today))
         with MailBox(self._host).login(self._user, self._password) as mb:
             mb.folder.set(self._folder)
-            # Fetch today's emails only — date_gte filters to today, then we
-            # discard anything with a timestamp from tomorrow onwards (shouldn't
-            # happen, but makes the intent explicit)
             criteria = AND(from_=self._from_address, date_gte=today)
-            for msg in mb.fetch(criteria, mark_seen=False):
+            log.info("imap.searching", criteria=str(criteria))
+            results = list(mb.fetch(criteria, mark_seen=False))
+            log.info("imap.search_done", count=len(results))
+            for msg in results:
                 msg_date = (msg.date or datetime.now(UTC)).date()
                 if msg_date != today:
                     continue
