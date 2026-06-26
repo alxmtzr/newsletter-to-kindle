@@ -47,7 +47,7 @@ def _cmd_build(args: argparse.Namespace) -> None:
     out_dir = Path(args.output)
     doc = build_epub(newsletter, out_dir)
     out_path = out_dir / doc.filename
-    print(f"EPUB written to: {out_path}  ({doc.data.__len__()} bytes)")
+    print(f"EPUB written to: {out_path}  ({len(doc.data)} bytes)")
 
 
 def _cmd_test_alert(args: argparse.Namespace) -> None:
@@ -70,6 +70,72 @@ def _cmd_test_alert(args: argparse.Namespace) -> None:
         "If you received this, alert emails are working correctly.",
     )
     print("Done. Check your inbox.")
+
+
+def _cmd_test_kindle(args: argparse.Namespace) -> None:
+    """Send a deliberately invalid EPUB to Kindle to trigger an Amazon bounce.
+
+    Use this to verify the full retry loop end-to-end:
+      1. Sends a corrupt EPUB via SMTP to your @kindle.com address
+      2. Amazon rejects it and sends a bounce back (usually within 5-10 min)
+      3. On the next `run`, the reconciler detects the bounce and marks it failed
+      4. The retry mechanism kicks in on the subsequent run
+
+    Watch progress with: python -m newsletter_kindle status
+    """
+    configure_logging("INFO")
+    import io
+    import smtplib
+    import uuid
+    import zipfile
+    from datetime import UTC, datetime
+    from email.message import EmailMessage
+
+    from newsletter_kindle.config import Secrets
+
+    secrets = Secrets()  # type: ignore[call-arg]
+
+    # Minimal but deliberately broken EPUB — valid ZIP, invalid EPUB structure
+    # Amazon accepts the SMTP delivery but fails conversion and sends a bounce
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("mimetype", "application/epub+zip")
+        z.writestr("META-INF/container.xml", "<broken>not valid epub xml</broken>")
+        z.writestr("content.opf", "<also broken>")
+    epub_bytes = buf.getvalue()
+    filename = f"test-invalid-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.epub"
+
+    # Record in SQLite so the reconciler can match the bounce by filename
+    db = StateDB(args.db)
+    fake_message_id = f"<test-kindle-{uuid.uuid4()}>"
+    db.upsert_newsletter(
+        message_id=fake_message_id,
+        source="test",
+        subject=f"Test invalid EPUB {filename}",
+        received_at=datetime.now(UTC),
+        status="validated",
+    )
+    db.set_status(fake_message_id, "validated", epub_path=f"/tmp/{filename}")
+
+    msg = EmailMessage()
+    msg["From"] = secrets.gmail_user
+    msg["To"] = secrets.kindle_email
+    msg["Subject"] = filename
+    msg.set_content("Test invalid EPUB — sent by newsletter-to-kindle test-kindle command.")
+    msg.add_attachment(epub_bytes, maintype="application", subtype="epub+zip", filename=filename)
+
+    print(f"Sending invalid EPUB '{filename}' to {secrets.kindle_email} ...")
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as s:
+        s.login(secrets.gmail_user, secrets.gmail_app_password)
+        s.send_message(msg)
+
+    db.record_send(fake_message_id, 1)
+    db.set_status(fake_message_id, "sent")
+
+    print("Sent. Amazon will bounce within ~10 minutes.")
+    print("Then run:  python -m newsletter_kindle run  (to trigger reconciliation)")
+    print("Check:     python -m newsletter_kindle status")
+    print(f"Message ID in DB: {fake_message_id}")
 
 
 def _cmd_status(args: argparse.Namespace) -> None:
@@ -113,6 +179,12 @@ def main() -> None:
 
     p_alert = sub.add_parser("test-alert", help="Send a test notification email")
     p_alert.set_defaults(func=_cmd_test_alert)
+
+    p_kindle = sub.add_parser(
+        "test-kindle", help="Send an invalid EPUB to Kindle to test the bounce/retry loop"
+    )
+    p_kindle.add_argument("--db", default="data/state.db")
+    p_kindle.set_defaults(func=_cmd_test_kindle)
 
     p_status = sub.add_parser("status", help="Show recent newsletter state")
     p_status.add_argument("--db", default="data/state.db")

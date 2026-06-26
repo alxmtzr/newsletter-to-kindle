@@ -74,6 +74,7 @@ pre-commit install
 | `python -m newsletter_kindle run` | Full pipeline including Kindle send |
 | `python -m newsletter_kindle status` | Show recent newsletter processing state from SQLite |
 | `python -m newsletter_kindle test-alert` | Send a test notification email to verify SMTP + alert config |
+| `python -m newsletter_kindle test-kindle` | Send an invalid EPUB to Kindle to test the bounce/retry loop |
 | `python -m newsletter_kindle build <file.eml>` | Build an EPUB from a local `.eml` file — no IMAP, no SQLite, no send |
 
 #### `run`
@@ -93,6 +94,29 @@ pre-commit install
 ```
 
 Prints a table of recent newsletter rows with their processing status, attempt count, and last error.
+
+#### `test-kindle`
+
+```sh
+.venv/bin/python -m newsletter_kindle test-kindle [--db data/state.db]
+```
+
+Sends a deliberately invalid EPUB to your Kindle email to trigger an Amazon bounce. Use this to verify the full retry loop works end-to-end:
+
+1. Run `test-kindle` — sends a corrupt EPUB, records it in SQLite as `sent`
+2. Wait ~10 minutes for Amazon to send a bounce email to the dedicated Gmail
+3. Run `python -m newsletter_kindle run` — the reconciler scans Gmail for the bounce, matches it by filename, marks it `confirmed_failed`
+4. Run it again — the retry mechanism picks up the `confirmed_failed` row and resends
+5. After 3 failed attempts the status becomes `dead_letter` and you get a notification email
+
+```sh
+# Step 1
+.venv/bin/python -m newsletter_kindle test-kindle
+
+# Step 3 (after ~10 min)
+.venv/bin/python -m newsletter_kindle run
+.venv/bin/python -m newsletter_kindle status
+```
 
 #### `test-alert`
 
@@ -142,6 +166,7 @@ docker compose up -d --build
 | `docker compose exec app python -m newsletter_kindle run` | Real run inside container |
 | `docker compose exec app python -m newsletter_kindle status` | Check processing state |
 | `docker compose exec app python -m newsletter_kindle test-alert` | Test notification email |
+| `docker compose exec app python -m newsletter_kindle test-kindle` | Test bounce/retry loop |
 | `docker logs -f newsletter-kindle` | Stream container logs |
 | `docker compose up -d --build` | Rebuild and restart container |
 | `docker compose down` | Stop container |
