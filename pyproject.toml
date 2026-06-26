@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "newsletter-kindle"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "ebooklib>=0.18",
+    "imap-tools>=1.7",
+    "Pillow>=10.4",
+    "pydantic-settings>=2.4",
+    "pyyaml>=6.0",
+    "structlog>=24.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "detect-secrets>=1.5",
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "types-beautifulsoup4",
+    "types-PyYAML",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=newsletter_kindle --cov-report=term-missing --cov-fail-under=75"
+
+[tool.coverage.run]
+source = ["src/newsletter_kindle"]
+omit = [
+    "*/tests/*",
+    # Pure IMAP/SMTP integration — tested via real credentials, not in unit suite
+    "src/newsletter_kindle/pipeline.py",
+    "src/newsletter_kindle/sources/imap_source.py",
+]
