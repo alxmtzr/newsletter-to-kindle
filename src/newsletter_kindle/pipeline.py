@@ -10,6 +10,7 @@ from newsletter_kindle.config import Secrets, load_config
 from newsletter_kindle.delivery.kindle_sender import KindleEmailSender
 from newsletter_kindle.epub.builder import build_epub
 from newsletter_kindle.models import Document
+from newsletter_kindle.notify.logging_config import configure_logging
 from newsletter_kindle.notify.notifier import Notifier
 from newsletter_kindle.parsers.tldr_parser import TldrParser
 from newsletter_kindle.sources.imap_source import ImapEmailSource
@@ -33,6 +34,7 @@ def _build_sender(sender_cfg: dict[str, Any], secrets: Secrets) -> KindleEmailSe
 
 
 def run(config_path: str = "config.yaml", dry_run: bool = False) -> None:
+    configure_logging()
     cfg = load_config(config_path)
     secrets = Secrets()  # type: ignore[call-arg]
 
