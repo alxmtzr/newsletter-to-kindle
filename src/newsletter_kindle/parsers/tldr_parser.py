@@ -13,8 +13,10 @@ from newsletter_kindle.parsers.base import Parser
 
 log = structlog.get_logger()
 
-_SPONSOR_KEYWORDS = {"sponsor", "advertise", "utm_source", "utm_campaign", "utm_medium"}
-_TRACKING_DOMAINS = {"tracking.tldrnewsletter.com", "tracking.tldr.tech"}
+_TRACKING_DOMAINS = {
+    "tracking.tldrnewsletter.com",
+    "tracking.tldr.tech",
+}
 
 
 def _unwrap_url(url: str) -> str:
@@ -23,12 +25,17 @@ def _unwrap_url(url: str) -> str:
         parsed = urllib.parse.urlparse(url)
         if parsed.netloc not in _TRACKING_DOMAINS:
             return url
-        # Try to extract the real URL from the path or query string
+        # Format: /CL0/<percent-encoded-url>/<n>/<hash>
+        # The real URL is the second path segment, percent-encoded
+        parts = parsed.path.split("/")
+        for part in parts:
+            if part.startswith("https:") or part.startswith("http:"):
+                return urllib.parse.unquote(part)
+        # Try query string
         qs = urllib.parse.parse_qs(parsed.query)
         if "url" in qs:
             return qs["url"][0]
-        # Some TLDR tracking URLs encode the destination in the path as base64
-        # Fall back to an HTTP HEAD request if we can't decode statically
+        # Fall back to following the redirect
         return _follow_redirect(url)
     except Exception:
         return url
@@ -38,7 +45,7 @@ def _follow_redirect(url: str) -> str:
     import urllib.request
 
     try:
-        req = urllib.request.Request(url, method="HEAD")
+        req = urllib.request.Request(url)
         req.add_header("User-Agent", "Mozilla/5.0")
         with urllib.request.urlopen(req, timeout=5) as resp:
             return str(resp.url)
@@ -48,9 +55,21 @@ def _follow_redirect(url: str) -> str:
 
 def _is_sponsor(element: Tag) -> bool:
     text = element.get_text(" ", strip=True).lower()
-    hrefs = " ".join(a.get("href", "") for a in element.find_all("a", href=True)).lower()
-    combined = text + hrefs
-    return any(kw in combined for kw in _SPONSOR_KEYWORDS)
+    # Only check text content for sponsor keywords — not hrefs.
+    # TLDR wraps all article links in tracking.tldrnewsletter.com redirects
+    # which may contain UTM params in the encoded destination URL, causing
+    # false positives if we scan hrefs.
+    text_keywords = {"sponsor", "advertise", "advertisement", "promoted"}
+    if any(kw in text for kw in text_keywords):
+        return True
+    # Also flag if the raw href (not the encoded destination) points to
+    # an obvious ad domain
+    ad_domains = {"advertise.tldr.tech", "advertise.tldrnewsletter.com"}
+    for a in element.find_all("a", href=True):
+        href = str(a.get("href", "")).lower()
+        if any(d in href for d in ad_domains):
+            return True
+    return False
 
 
 def _extract_date(soup: BeautifulSoup) -> str:
