@@ -114,7 +114,8 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
         title = f"{section.emoji} {section.title}".strip() if section.emoji else section.title
         title_safe = _strip_emoji(title)  # no emoji in XHTML title/NCX — Amazon chokes
 
-        parts = [f"<h1>{_html.escape(title)}</h1>"]  # keep emoji in body h1
+        # Use emoji-stripped title in h1 too — Kindle fonts lack emoji glyphs
+        parts = [f"<h1>{_html.escape(title_safe)}</h1>"]
         for story in section.stories:
             read_time_html = (
                 f' <span class="read-time">({_html.escape(story.read_time)})</span>'
@@ -142,8 +143,7 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
 
-    safe_date = newsletter.date.replace("-", "")
-    filename = f"{newsletter.source_name}_{safe_date}.epub"
+    filename = f"TLDR_{newsletter.date}.epub"
     out_path = output_dir / filename
     epub.write_epub(str(out_path), book)
 

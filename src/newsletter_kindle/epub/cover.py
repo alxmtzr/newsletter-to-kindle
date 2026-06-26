@@ -104,21 +104,29 @@ def generate_cover(newsletter: Newsletter) -> bytes:
     # Divider line
     draw.line([(55, panel_top + 345), (_W - 55, panel_top + 345)], fill=(60, 60, 80), width=1)
 
-    # Headline peek — first 3 stories
-    font_story = _load_font("Inter-Regular.ttf", 38)
+    # Headline peek — first 3 stories, ASCII bullet, truncated to fit width
+    font_story = _load_font("Inter-Regular.ttf", 36)
     stories: list[str] = []
     for section in newsletter.sections:
         for story in section.stories:
             if len(stories) >= 3:
                 break
-            stories.append(story.title[:75] + ("…" if len(story.title) > 75 else ""))
+            # Strip emoji from headlines — PIL default font can't render them
+            clean = story.title.encode("ascii", errors="ignore").decode("ascii").strip()
+            if not clean:
+                clean = story.title[:60]
+            # Truncate to fit panel width
+            max_chars = 55
+            if len(clean) > max_chars:
+                clean = clean[:max_chars].rstrip() + "..."
+            stories.append(clean)
         if len(stories) >= 3:
             break
 
     y_offset = panel_top + 370
-    for _, headline in enumerate(stories):
-        draw.text((60, y_offset), f"• {headline}", fill=(130, 130, 160), font=font_story)
-        y_offset += 58
+    for headline in stories:
+        draw.text((60, y_offset), f"- {headline}", fill=(130, 130, 160), font=font_story)
+        y_offset += 62
 
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=92, optimize=True)
