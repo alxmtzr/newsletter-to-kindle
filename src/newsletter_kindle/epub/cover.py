@@ -20,8 +20,12 @@ def _hue_to_rgb(hue: int) -> _RGB:
     h = hue / 60
     x = int(255 * (1 - abs(h % 2 - 1)))
     sectors = [
-        (255, x, 0), (x, 255, 0), (0, 255, x),
-        (0, x, 255), (x, 0, 255), (255, 0, x),
+        (255, x, 0),
+        (x, 255, 0),
+        (0, 255, x),
+        (0, x, 255),
+        (x, 0, 255),
+        (255, 0, x),
     ]
     return sectors[int(h) % 6]
 
@@ -86,6 +90,7 @@ def _pattern_grid(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -
 
 def _pattern_waves(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
     import math
+
     for i in range(8):
         y_base = rng.randint(50, int(_H * 0.6))
         amp = rng.randint(20, 80)
