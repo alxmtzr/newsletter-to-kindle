@@ -138,6 +138,54 @@ def _cmd_test_kindle(args: argparse.Namespace) -> None:
     print(f"Message ID in DB: {fake_message_id}")
 
 
+def _cmd_cleanup(args: argparse.Namespace) -> None:
+    """Remove entries from the SQLite state DB."""
+    configure_logging("WARNING")
+    db = StateDB(args.db)
+
+    removed = 0
+
+    if args.test:
+        cur = db._conn.execute("DELETE FROM send_attempts WHERE message_id LIKE '<test-kindle-%'")
+        removed += cur.rowcount
+        cur = db._conn.execute("DELETE FROM newsletters WHERE message_id LIKE '<test-kindle-%'")
+        removed += cur.rowcount
+        db._conn.commit()
+        print(f"Removed {removed} test-kindle rows.")
+
+    if args.old is not None:
+        cur = db._conn.execute(
+            """
+            DELETE FROM send_attempts WHERE message_id IN (
+                SELECT message_id FROM newsletters
+                WHERE status IN ('confirmed_ok', 'dead_letter')
+                AND received_at < date('now', ?)
+            )
+            """,
+            (f"-{args.old} days",),
+        )
+        sa_removed = cur.rowcount
+        cur = db._conn.execute(
+            """
+            DELETE FROM newsletters
+            WHERE status IN ('confirmed_ok', 'dead_letter')
+            AND received_at < date('now', ?)
+            """,
+            (f"-{args.old} days",),
+        )
+        nl_removed = cur.rowcount
+        db._conn.commit()
+        print(
+            f"Removed {nl_removed} newsletters and {sa_removed} send attempts"
+            f" older than {args.old} days."
+        )
+
+    if not args.test and args.old is None:
+        print("Nothing to do. Use --test to remove test entries,")
+        print("  or --old N to remove confirmed/dead entries older than N days.")
+        print("Example: python -m newsletter_kindle cleanup --test --old 30")
+
+
 def _cmd_status(args: argparse.Namespace) -> None:
     configure_logging("WARNING")
     db = StateDB(args.db)
@@ -185,6 +233,14 @@ def main() -> None:
     )
     p_kindle.add_argument("--db", default="data/state.db")
     p_kindle.set_defaults(func=_cmd_test_kindle)
+
+    p_cleanup = sub.add_parser("cleanup", help="Remove entries from the state DB")
+    p_cleanup.add_argument("--db", default="data/state.db")
+    p_cleanup.add_argument("--test", action="store_true", help="Remove test-kindle entries")
+    p_cleanup.add_argument(
+        "--old", type=int, metavar="DAYS", help="Remove confirmed/dead entries older than N days"
+    )
+    p_cleanup.set_defaults(func=_cmd_cleanup)
 
     p_status = sub.add_parser("status", help="Show recent newsletter state")
     p_status.add_argument("--db", default="data/state.db")
