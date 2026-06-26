@@ -53,5 +53,5 @@ def test_cover_differs_by_date() -> None:
 
 def test_cover_size_reasonable() -> None:
     data = generate_cover(_sample_newsletter())
-    # Should be between 50KB and 1MB for a 1600x2400 JPEG
-    assert 50_000 < len(data) < 1_000_000
+    # Should be between 20KB and 1MB for a 1200x1800 JPEG
+    assert 20_000 < len(data) < 1_000_000

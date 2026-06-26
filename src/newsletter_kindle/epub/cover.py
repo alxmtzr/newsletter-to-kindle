@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import io
 import random
 from pathlib import Path
@@ -14,12 +13,7 @@ _RGB = tuple[int, int, int]
 _ASSETS = Path(__file__).parent.parent / "assets" / "fonts"
 _W, _H = 1200, 1800
 
-# Available background patterns — one picked randomly each generation
 _PATTERNS = ["geometric", "diagonal", "circles", "grid", "waves"]
-
-
-def _seed_from_date(date: str) -> int:
-    return int(hashlib.md5(date.encode()).hexdigest(), 16) % (2**32)
 
 
 def _hue_to_rgb(hue: int) -> _RGB:
@@ -118,15 +112,17 @@ def _load_font(name: str, size: int) -> ImageFont.FreeTypeFont:
 
 
 def generate_cover(newsletter: Newsletter) -> bytes:
-    # Date-seeded hue (consistent colour per issue) + truly random pattern each run
-    color_seed = _seed_from_date(newsletter.date)
-    color_rng = random.Random(color_seed)
-    pattern_rng = random.Random()  # truly random — different each generation
+    # Both colour and pattern are fully random each generation
+    pattern_rng = random.Random()
 
-    hue = color_rng.randint(0, 360)
-    c1 = _hsv_to_rgb(hue, 0.60, 0.80)
-    c2 = _hsv_to_rgb((hue + 45) % 360, 0.50, 0.55)
-    accent = _hsv_to_rgb((hue + 200) % 360, 0.65, 0.30)
+    hue = pattern_rng.randint(0, 360)
+    # Keep saturation moderate and value high — readable on e-ink Paperwhite
+    # Avoid very dark backgrounds (value < 0.55) and overly saturated colours
+    sat = pattern_rng.uniform(0.35, 0.65)
+    val = pattern_rng.uniform(0.65, 0.90)
+    c1 = _hsv_to_rgb(hue, sat, val)
+    c2 = _hsv_to_rgb((hue + pattern_rng.randint(30, 60)) % 360, sat * 0.8, val * 0.75)
+    accent = _hsv_to_rgb((hue + 180) % 360, sat * 0.6, val * 0.45)
 
     img = Image.new("RGB", (_W, _H), (20, 20, 30))
     draw = ImageDraw.Draw(img, "RGBA")
@@ -137,9 +133,9 @@ def generate_cover(newsletter: Newsletter) -> bytes:
     pattern_name = pattern_rng.choice(_PATTERNS)
     _PATTERN_FNS[pattern_name](draw, pattern_rng, accent)
 
-    # Dark bottom panel — flush left, no gap
+    # Bottom panel — dark but not pitch black, good contrast on e-ink
     panel_top = int(_H * 0.62)
-    draw.rectangle([0, panel_top, _W, _H], fill=(15, 15, 22))
+    draw.rectangle([0, panel_top, _W, _H], fill=(28, 28, 36))
 
     # Thin coloured accent bar at top of panel
     stripe_color = _hue_to_rgb(hue)
