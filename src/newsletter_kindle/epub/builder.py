@@ -59,9 +59,7 @@ def _fix_epub(path: Path) -> None:
 def _strip_emoji(text: str) -> str:
     """Remove emoji from text — Amazon's converter chokes on emoji in XHTML titles."""
     # Matches emoji in both BMP (U+2600-U+27FF) and supplementary planes
-    return re.sub(
-        r"[☀-⟿⬀-⯿\U0001F000-\U0010FFFF]", "", text
-    ).strip()
+    return re.sub(r"[☀-⟿⬀-⯿\U0001F000-\U0010FFFF]", "", text).strip()
 
 
 def _chapter_html(title: str, body: str) -> bytes:
