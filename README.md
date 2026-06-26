@@ -75,6 +75,8 @@ pre-commit install
 | `python -m newsletter_kindle status` | Show recent newsletter processing state from SQLite |
 | `python -m newsletter_kindle test-alert` | Send a test notification email to verify SMTP + alert config |
 | `python -m newsletter_kindle test-kindle` | Send an invalid EPUB to Kindle to test the bounce/retry loop |
+| `python -m newsletter_kindle cleanup --test` | Remove test-kindle entries from the state DB |
+| `python -m newsletter_kindle cleanup --old 30` | Remove confirmed/dead entries older than 30 days |
 | `python -m newsletter_kindle build <file.eml>` | Build an EPUB from a local `.eml` file — no IMAP, no SQLite, no send |
 
 #### `run`
@@ -167,6 +169,8 @@ docker compose up -d --build
 | `docker compose exec app python -m newsletter_kindle status` | Check processing state |
 | `docker compose exec app python -m newsletter_kindle test-alert` | Test notification email |
 | `docker compose exec app python -m newsletter_kindle test-kindle` | Test bounce/retry loop |
+| `docker compose exec app python -m newsletter_kindle cleanup --test` | Remove test entries |
+| `docker compose exec app python -m newsletter_kindle cleanup --old 30` | Remove entries older than 30 days |
 | `docker logs -f newsletter-kindle` | Stream container logs |
 | `docker compose up -d --build` | Rebuild and restart container |
 | `docker compose down` | Stop container |
