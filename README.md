@@ -2,7 +2,7 @@
 
 Automated daily pipeline: TLDR newsletter email → clean EPUB with procedurally-generated cover → Kindle.
 
-Runs as a single Docker container on a VPS (hourly cron, fully idempotent). Handles Amazon's asynchronous bounce flow with automatic retry and dead-letter notification. Extensible for other newsletter sources and delivery targets.
+Runs as a single Docker container on a VPS (runs every 3 hours, fully idempotent). Handles Amazon's asynchronous bounce flow with automatic retry and dead-letter notification. Extensible for other newsletter sources and delivery targets.
 
 ## How it works
 
@@ -39,7 +39,7 @@ Your Kindle email address (`yourname@kindle.com`) is on the same page.
 
 ### 3. Healthchecks.io (optional but recommended)
 
-Create a free check at [healthchecks.io](https://healthchecks.io), set the interval to 90 minutes, copy the ping URL. If the pipeline stops running, Healthchecks.io will email you.
+Create a free check at [healthchecks.io](https://healthchecks.io), set the interval to 4 hours, copy the ping URL. If the pipeline stops running, Healthchecks.io will email you.
 
 ### 4. Configure `.env`
 
@@ -179,7 +179,7 @@ docker compose up -d --build
 
 Push to `main` → CI runs (ruff + mypy + pytest + gitleaks + docker build) → if all pass → GitHub Actions SSHes into the VPS and redeploys automatically.
 
-The cron job inside the container runs every hour and is fully idempotent — safe to run multiple times.
+The cron job inside the container runs every 3 hours and is fully idempotent — safe to run multiple times.
 
 ---
 
@@ -244,7 +244,7 @@ Write `src/newsletter_kindle/sources/rss_source.py` implementing `Source.fetch_n
 | State | SQLite (stdlib) |
 | Logging | `structlog` (JSON to stdout) |
 | Config | `pydantic-settings` (`.env`) + `pyyaml` (`config.yaml`) |
-| Container | `python:3.12-slim` + `eclipse-temurin:21-jre-alpine`, ~250 MB, hourly cron |
+| Container | `python:3.12-slim` + `eclipse-temurin:21-jre-alpine`, ~250 MB, cron every 3 hours |
 | CI | GitHub Actions: ruff + mypy + pytest + gitleaks + docker build |
 | Deploy | GHA SSH (`appleboy/ssh-action`) on merge to `main` |
 | Secret scanning | `detect-secrets` + `gitleaks` pre-commit hooks |
