@@ -81,8 +81,7 @@ class Notifier:
 
     def _send(self, msg: EmailMessage) -> None:
         try:
-            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=15) as s:
-                s.starttls()
+            with smtplib.SMTP_SSL(self._smtp_host, 465, timeout=15) as s:
                 s.login(self._user, self._password)
                 s.send_message(msg)
         except Exception as exc:
