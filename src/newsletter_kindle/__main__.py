@@ -287,7 +287,8 @@ def main() -> None:
         "--old", type=int, metavar="DAYS", help="Remove confirmed/dead entries older than N days"
     )
     p_cleanup.add_argument(
-        "--reset-failed", action="store_true",
+        "--reset-failed",
+        action="store_true",
         help="Reset confirmed_failed rows to validated so they retry on next run",
     )
     p_cleanup.set_defaults(func=_cmd_cleanup)
