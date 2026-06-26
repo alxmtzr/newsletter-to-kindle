@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html as _html
 import io
 import uuid
 import zipfile
@@ -15,16 +16,13 @@ from newsletter_kindle.models import Document, Newsletter
 log = structlog.get_logger()
 
 _STYLE_PATH = Path(__file__).parent / "style.css"
-_COVER_MAX_BYTES = 120_000  # Amazon recommends under 127KB
+_COVER_MAX_BYTES = 120_000
 _COVER_WIDTH = 1200
 _COVER_HEIGHT = 1800
 
 
 def _fix_epub(path: Path) -> None:
-    """Post-process the EPUB to fix Amazon compatibility issues:
-    - Remove <!DOCTYPE html> from all XHTML files (causes E999 on Amazon)
-    - Recompress cover image if over size limit
-    """
+    """Post-process the EPUB ZIP to fix Amazon compatibility issues."""
     with zipfile.ZipFile(path, "r") as zin:
         entries = {info.filename: (info, zin.read(info.filename)) for info in zin.infolist()}
 
@@ -32,9 +30,10 @@ def _fix_epub(path: Path) -> None:
     for filename, (info, data) in entries.items():
         if filename.endswith(".xhtml") or filename.endswith(".html"):
             text = data.decode("utf-8")
+            # Remove DOCTYPE — causes E999 on Amazon's converter
             text = text.replace("<!DOCTYPE html>\n", "").replace("<!DOCTYPE html>", "")
             data = text.encode("utf-8")
-        elif filename == "EPUB/cover.jpg" or filename == "cover.jpg":
+        elif "cover.jpg" in filename:
             if len(data) > _COVER_MAX_BYTES:
                 img = Image.open(io.BytesIO(data))
                 resized = img.resize((_COVER_WIDTH, _COVER_HEIGHT), Image.Resampling.LANCZOS)
@@ -44,10 +43,8 @@ def _fix_epub(path: Path) -> None:
                 log.info("epub.cover_recompressed", size=len(data))
         fixed[filename] = (info, data)
 
-    # Rewrite ZIP — mimetype must be first and uncompressed
     tmp = path.with_suffix(".tmp.epub")
     with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
-        # mimetype must be first and stored (uncompressed)
         if "mimetype" in fixed:
             info, data = fixed.pop("mimetype")
             info.compress_type = zipfile.ZIP_STORED
@@ -58,12 +55,27 @@ def _fix_epub(path: Path) -> None:
     tmp.replace(path)
 
 
+def _chapter_html(title: str, body: str) -> bytes:
+    """Minimal valid XHTML — matches the POC that successfully converted on Amazon."""
+    escaped_title = _html.escape(title)
+    return (
+        f'<html xmlns="http://www.w3.org/1999/xhtml">\n'
+        f"<head>\n"
+        f"  <title>{escaped_title}</title>\n"
+        f'  <link rel="stylesheet" href="style.css"/>\n'
+        f"</head>\n"
+        f"<body>\n"
+        f"{body}\n"
+        f"</body>\n"
+        f"</html>"
+    ).encode()
+
+
 def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     book = epub.EpubBook()
 
-    # Deterministic identifier — stable across re-generation of the same issue
     identifier = str(uuid.uuid5(uuid.NAMESPACE_URL, newsletter.message_id))
     book.set_identifier(f"urn:uuid:{identifier}")
     book.set_title(newsletter.title)
@@ -86,19 +98,10 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
     for subject in newsletter.subjects:
         book.add_metadata("DC", "subject", subject)
 
-    # Accessibility
-    book.add_metadata(
-        None,
-        "meta",
-        "textual",
-        {"property": "schema:accessMode"},
-    )
-
-    # Cover image
+    # Cover — no create_page to avoid ebooklib's auto-generated cover.xhtml
     cover_bytes = generate_cover(newsletter)
-    book.set_cover("cover.jpg", cover_bytes, create_page=True)
+    book.set_cover("cover.jpg", cover_bytes, create_page=False)
 
-    # Stylesheet
     style = epub.EpubItem(
         uid="style",
         file_name="style.css",
@@ -116,28 +119,24 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
         slug = f"section_{i}"
         title = f"{section.emoji} {section.title}".strip() if section.emoji else section.title
 
-        parts = [f'<div class="section-header">{title}</div>']
+        parts = [f"<h1>{_html.escape(title)}</h1>"]
         for story in section.stories:
             read_time_html = (
-                f' <span class="read-time">({story.read_time})</span>' if story.read_time else ""
+                f' <span class="read-time">({_html.escape(story.read_time)})</span>'
+                if story.read_time
+                else ""
             )
             parts.append(
                 f'<div class="article">'
                 f'<div class="article-title">'
-                f'<a href="{story.url}">{story.title}</a>{read_time_html}'
+                f'<a href="{story.url}">{_html.escape(story.title)}</a>{read_time_html}'
                 f"</div>"
-                f'<div class="article-body">{story.body}</div>'
+                f'<div class="article-body">{_html.escape(story.body)}</div>'
                 f"</div>"
             )
 
         chapter = epub.EpubHtml(title=title, file_name=f"{slug}.xhtml", lang="en")
-        chapter.content = (
-            '<?xml version="1.0" encoding="utf-8"?>'
-            '<html xmlns="http://www.w3.org/1999/xhtml">'
-            f"<head><title>{title}</title>"
-            '<link rel="stylesheet" type="text/css" href="style.css"/>'
-            "</head><body>" + "".join(parts) + "</body></html>"
-        ).encode("utf-8")
+        chapter.content = _chapter_html(title, "\n".join(parts))
         chapter.add_item(style)
         book.add_item(chapter)
         chapters.append(chapter)
