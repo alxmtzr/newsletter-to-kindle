@@ -51,7 +51,8 @@ addopts = "--cov=newsletter_kindle --cov-report=term-missing --cov-fail-under=75
 source = ["src/newsletter_kindle"]
 omit = [
     "*/tests/*",
-    # Pure IMAP/SMTP integration — tested via real credentials, not in unit suite
+    # CLI entrypoint and pure integration modules — not unit-testable without live credentials
+    "src/newsletter_kindle/__main__.py",
     "src/newsletter_kindle/pipeline.py",
     "src/newsletter_kindle/sources/imap_source.py",
 ]
