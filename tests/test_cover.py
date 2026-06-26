@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 from datetime import UTC, datetime
 
 from newsletter_kindle.epub.cover import generate_cover
