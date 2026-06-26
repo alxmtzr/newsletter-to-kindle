@@ -48,11 +48,14 @@ def validate_epub(document: Document) -> ValidationResult:
             timeout=60,
         )
 
-    if not report_path.exists():
-        log.error("epubcheck.no_report", stderr=result.stderr[:500])
-        return ValidationResult(ok=False, errors=["EPUBCheck produced no report"], warnings=[])
+        if not report_path.exists():
+            log.error("epubcheck.no_report", stderr=result.stderr[:500])
+            return ValidationResult(
+                ok=False, errors=["EPUBCheck produced no report"], warnings=[]
+            )
 
-    report = json.loads(report_path.read_text())
+        report = json.loads(report_path.read_text())
+
     messages = report.get("messages", [])
     errors = [m["message"] for m in messages if m.get("severity") == "ERROR"]
     warnings = [m["message"] for m in messages if m.get("severity") == "WARNING"]
