@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
-from newsletter_kindle.validation.epub_validator import ValidationResult, validate_epub
 from newsletter_kindle.models import Document
+from newsletter_kindle.validation.epub_validator import ValidationResult, validate_epub
 
 
 def _doc() -> Document:

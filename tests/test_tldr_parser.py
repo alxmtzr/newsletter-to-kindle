@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -17,7 +17,7 @@ def test_parse_fixture(eml_path: Path) -> None:
     raw = RawMessage(
         source_name="tldr",
         message_id=f"<test-{eml_path.stem}@fixture>",
-        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=UTC),
         raw_bytes=eml_path.read_bytes(),
     )
     metadata = {
@@ -45,7 +45,7 @@ def test_sponsor_filtered() -> None:
     raw = RawMessage(
         source_name="tldr",
         message_id="<test-sponsor@fixture>",
-        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=UTC),
         raw_bytes=eml_path.read_bytes(),
     )
     parser = TldrParser()
@@ -60,11 +60,13 @@ def test_metadata_applied() -> None:
     raw = RawMessage(
         source_name="tldr",
         message_id="<test-meta@fixture>",
-        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=UTC),
         raw_bytes=eml_path.read_bytes(),
     )
     parser = TldrParser()
-    newsletter = parser.parse(raw, {"title_prefix": "TLDR", "author": "Dan Ni", "publisher": "TLDR Newsletter"})
+    newsletter = parser.parse(
+        raw, {"title_prefix": "TLDR", "author": "Dan Ni", "publisher": "TLDR Newsletter"}
+    )
 
     assert newsletter.author == "Dan Ni"
     assert newsletter.publisher == "TLDR Newsletter"
@@ -75,7 +77,7 @@ def test_section_count() -> None:
     raw = RawMessage(
         source_name="tldr",
         message_id="<test-sections@fixture>",
-        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, 8, 0, tzinfo=UTC),
         raw_bytes=eml_path.read_bytes(),
     )
     parser = TldrParser()

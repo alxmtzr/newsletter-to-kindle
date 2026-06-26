@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS newsletters (
@@ -35,7 +34,7 @@ CREATE TABLE IF NOT EXISTS link_cache (
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class StateDB:
@@ -151,9 +150,7 @@ class StateDB:
         self._conn.commit()
         return cur.lastrowid  # type: ignore[return-value]
 
-    def confirm_send(
-        self, attempt_id: int, outcome: str, bounce_reason: str | None = None
-    ) -> None:
+    def confirm_send(self, attempt_id: int, outcome: str, bounce_reason: str | None = None) -> None:
         self._conn.execute(
             """
             UPDATE send_attempts

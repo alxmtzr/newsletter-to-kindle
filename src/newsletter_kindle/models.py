@@ -22,8 +22,8 @@ class Section:
 @dataclass
 class Newsletter:
     source_name: str
-    title: str          # e.g. "TLDR — 2026-06-26"
-    date: str           # ISO 8601 e.g. "2026-06-26"
+    title: str  # e.g. "TLDR — 2026-06-26"
+    date: str  # ISO 8601 e.g. "2026-06-26"
     message_id: str
     received_at: datetime
     sections: list[Section] = field(default_factory=list)

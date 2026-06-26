@@ -49,7 +49,7 @@ def run(config_path: str = "config.yaml", dry_run: bool = False) -> None:
         sender_configs: dict[str, Any] = cfg.get("senders", {})
 
         # Step 1: Reconcile bounces and confirm stale sends
-        for sender_name, sender_cfg in sender_configs.items():
+        for _sender_name, sender_cfg in sender_configs.items():
             sender = _build_sender(sender_cfg, secrets)
             sender.reconcile(db)
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 from newsletter_kindle.notify.notifier import Notifier
-from newsletter_kindle.notify.logging_config import configure_logging
 
 
 def _notifier(**kwargs) -> Notifier:
@@ -60,22 +59,23 @@ def test_send_dead_letter_attaches_epub() -> None:
 
 
 def test_configure_logging() -> None:
+    import logging as _logging
+
     import structlog
-    from newsletter_kindle.notify.logging_config import configure_logging
-    # Save and restore to avoid polluting other tests
-    old_config = structlog._config._CONFIG  # type: ignore[attr-defined]
+
+    from newsletter_kindle.notify.logging_config import configure_logging as _configure
+
     try:
-        configure_logging("INFO")
+        _configure("INFO")
     finally:
         structlog.reset_defaults()
-        import logging
         structlog.configure(
             processors=[
                 structlog.stdlib.add_log_level,
                 structlog.processors.TimeStamper(fmt="iso"),
                 structlog.processors.JSONRenderer(),
             ],
-            wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING),
+            wrapper_class=structlog.make_filtering_bound_logger(_logging.WARNING),
             logger_factory=structlog.PrintLoggerFactory(),
             cache_logger_on_first_use=False,
         )

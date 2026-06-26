@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 from newsletter_kindle.delivery.base import Sender
 from newsletter_kindle.models import Document, Newsletter, RawMessage, Section, SendReceipt, Story
@@ -49,7 +46,7 @@ class _FakeSender(Sender):
         self.sent.append(document)
         return SendReceipt(
             message_id=document.message_id,
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             attempt_no=attempt_no,
         )
 
@@ -61,7 +58,7 @@ def test_fake_source_skips_known() -> None:
     raw = RawMessage(
         source_name="test",
         message_id="<known>",
-        received_at=datetime.now(timezone.utc),
+        received_at=datetime.now(UTC),
         raw_bytes=b"",
     )
     source = _FakeSource([raw])
@@ -73,7 +70,7 @@ def test_fake_parser_produces_newsletter() -> None:
     raw = RawMessage(
         source_name="test",
         message_id="<p1>",
-        received_at=datetime.now(timezone.utc),
+        received_at=datetime.now(UTC),
         raw_bytes=b"",
     )
     parser = _FakeParser()

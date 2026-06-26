@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import sys
 
 from newsletter_kindle.notify.logging_config import configure_logging
 from newsletter_kindle.pipeline import run
 from newsletter_kindle.state.db import StateDB
-from newsletter_kindle.config import Secrets
 
 
 def _cmd_run(args: argparse.Namespace) -> None:
@@ -18,7 +16,11 @@ def _cmd_status(args: argparse.Namespace) -> None:
     configure_logging("WARNING")
     db = StateDB(args.db)
     rows = db.recent(limit=args.limit)
-    print(f"{'MESSAGE_ID':<45} {'SOURCE':<12} {'STATUS':<18} {'ATTEMPTS':<9} {'RECEIVED':<24} {'ERROR'}")
+    header = (
+        f"{'MESSAGE_ID':<45} {'SOURCE':<12} {'STATUS':<18} "
+        f"{'ATTEMPTS':<9} {'RECEIVED':<24} {'ERROR'}"
+    )
+    print(header)
     print("-" * 120)
     for row in rows:
         err = (row["last_error"] or "")[:60].replace("\n", " ")

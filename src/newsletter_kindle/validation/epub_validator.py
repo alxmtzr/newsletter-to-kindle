@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -35,10 +34,14 @@ def validate_epub(document: Document) -> ValidationResult:
 
         result = subprocess.run(
             [
-                "java", "-jar", str(_EPUBCHECK_JAR),
+                "java",
+                "-jar",
+                str(_EPUBCHECK_JAR),
                 str(epub_path),
-                "--json", str(report_path),
-                "--mode", "epub",
+                "--json",
+                str(report_path),
+                "--mode",
+                "epub",
             ],
             capture_output=True,
             text=True,

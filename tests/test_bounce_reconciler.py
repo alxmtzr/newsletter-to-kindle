@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import email
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import MagicMock
 
-from newsletter_kindle.delivery.kindle_sender import KindleEmailSender, _BOUNCE_SUBJECT_RE
+from newsletter_kindle.delivery.kindle_sender import _BOUNCE_SUBJECT_RE, KindleEmailSender
 from newsletter_kindle.state.db import StateDB
 
 
@@ -24,7 +22,7 @@ def test_reconcile_confirms_stale_sends(tmp_path: Path) -> None:
         message_id="<stale1>",
         source="tldr",
         subject="TLDR 2024-01-15",
-        received_at=datetime(2024, 1, 14, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 14, tzinfo=UTC),
         status="sent",
     )
     aid = db.record_send("<stale1>", 1)
@@ -33,7 +31,7 @@ def test_reconcile_confirms_stale_sends(tmp_path: Path) -> None:
     db._conn.execute(
         "UPDATE send_attempts SET sent_at = ? WHERE id = ?",
         (
-            (datetime.now(timezone.utc) - timedelta(minutes=40)).isoformat(),
+            (datetime.now(UTC) - timedelta(minutes=40)).isoformat(),
             aid,
         ),
     )

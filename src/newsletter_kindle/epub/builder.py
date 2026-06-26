@@ -35,9 +35,7 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
         book.add_metadata("DC", "rights", newsletter.rights)
     book.add_metadata("DC", "source", newsletter.source_name)
 
-    first_stories = [
-        s.title for sec in newsletter.sections for s in sec.stories
-    ][:3]
+    first_stories = [s.title for sec in newsletter.sections for s in sec.stories][:3]
     if first_stories:
         book.add_metadata("DC", "description", " | ".join(first_stories))
 
@@ -77,9 +75,7 @@ def build_epub(newsletter: Newsletter, output_dir: Path) -> Document:
         parts = [f'<div class="section-header">{title}</div>']
         for story in section.stories:
             read_time_html = (
-                f' <span class="read-time">({story.read_time})</span>'
-                if story.read_time
-                else ""
+                f' <span class="read-time">({story.read_time})</span>' if story.read_time else ""
             )
             parts.append(
                 f'<div class="article">'

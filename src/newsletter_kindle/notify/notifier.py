@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import smtplib
-import traceback
 import urllib.request
 from email.message import EmailMessage
 

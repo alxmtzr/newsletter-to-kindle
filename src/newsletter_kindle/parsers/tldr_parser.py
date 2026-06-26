@@ -3,7 +3,7 @@ from __future__ import annotations
 import email
 import re
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 from bs4 import BeautifulSoup, Tag
@@ -36,6 +36,7 @@ def _unwrap_url(url: str) -> str:
 
 def _follow_redirect(url: str) -> str:
     import urllib.request
+
     try:
         req = urllib.request.Request(url, method="HEAD")
         req.add_header("User-Agent", "Mozilla/5.0")
@@ -61,7 +62,7 @@ def _extract_date(soup: BeautifulSoup) -> str:
         m = re.search(r"\d{4}-\d{2}-\d{2}", tag)
         if m:
             return m.group(0)
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return datetime.now(UTC).strftime("%Y-%m-%d")
 
 
 def _extract_sections(soup: BeautifulSoup) -> list[Section]:
@@ -78,9 +79,7 @@ def _extract_sections(soup: BeautifulSoup) -> list[Section]:
         if emoji_span and not h1:
             if current_section and current_section.stories:
                 sections.append(current_section)
-            current_section = Section(
-                emoji=emoji_span.get_text(strip=True), title="", stories=[]
-            )
+            current_section = Section(emoji=emoji_span.get_text(strip=True), title="", stories=[])
             continue
 
         if h1 and current_section and not current_section.title:
@@ -103,9 +102,7 @@ def _extract_sections(soup: BeautifulSoup) -> list[Section]:
                     title_text = parts[0].strip()
                     read_time = parts[1].rstrip(")")
 
-            body_span = block.find(
-                "span", style=lambda s: s and "Helvetica" in s if s else False
-            )
+            body_span = block.find("span", style=lambda s: s and "Helvetica" in s if s else False)
             body = body_span.get_text(" ", strip=True) if body_span else ""
 
             current_section.stories.append(
@@ -135,9 +132,7 @@ class TldrParser(Parser):
         else:
             payload = msg.get_payload(decode=True)
             if isinstance(payload, bytes):
-                html_body = payload.decode(
-                    msg.get_content_charset() or "utf-8", errors="replace"
-                )
+                html_body = payload.decode(msg.get_content_charset() or "utf-8", errors="replace")
 
         soup = BeautifulSoup(html_body, "html.parser")
         date = _extract_date(soup)

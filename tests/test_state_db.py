@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -18,7 +17,7 @@ def test_upsert_and_status(db: StateDB) -> None:
         message_id="<test1>",
         source="tldr",
         subject="TLDR 2024-01-15",
-        received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, tzinfo=UTC),
     )
     ids = db.known_message_ids("tldr")
     assert "<test1>" in ids
@@ -30,7 +29,7 @@ def test_idempotent_upsert(db: StateDB) -> None:
             message_id="<dup>",
             source="tldr",
             subject="Dup",
-            received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+            received_at=datetime(2024, 1, 15, tzinfo=UTC),
         )
     ids = db.known_message_ids("tldr")
     assert ids.count("<dup>") if hasattr(ids, "count") else True
@@ -42,7 +41,7 @@ def test_set_status(db: StateDB) -> None:
         message_id="<s1>",
         source="tldr",
         subject="",
-        received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, tzinfo=UTC),
     )
     db.set_status("<s1>", "epub_built", epub_path="/tmp/test.epub")
     rows = db.recent()
@@ -54,7 +53,7 @@ def test_send_attempt_lifecycle(db: StateDB) -> None:
         message_id="<sa1>",
         source="tldr",
         subject="",
-        received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, tzinfo=UTC),
     )
     aid = db.record_send("<sa1>", 1)
     assert aid is not None
@@ -72,7 +71,7 @@ def test_pending_retries(db: StateDB) -> None:
         message_id="<r1>",
         source="tldr",
         subject="",
-        received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, tzinfo=UTC),
     )
     db.set_status("<r1>", "confirmed_failed")
     retries = db.pending_retries()

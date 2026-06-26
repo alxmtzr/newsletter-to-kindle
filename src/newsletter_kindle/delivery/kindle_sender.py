@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import email as _email
+import contextlib
 import re
 import smtplib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
 
 import structlog
-from imap_tools import MailBox, AND
+from imap_tools import AND, MailBox
 
 from newsletter_kindle.delivery.base import Sender
 from newsletter_kindle.models import Document, SendReceipt
@@ -71,7 +71,7 @@ class KindleEmailSender(Sender):
         )
         return SendReceipt(
             message_id=document.message_id,
-            sent_at=datetime.now(timezone.utc),
+            sent_at=datetime.now(UTC),
             attempt_no=attempt_no,
         )
 
@@ -99,17 +99,13 @@ class KindleEmailSender(Sender):
                         db.confirm_send(attempt_id, "failed", bounce_reason=subject)
                         db.set_status(message_id, "confirmed_failed")
                         # Move bounce to kindle-bounces label
-                        try:
+                        with contextlib.suppress(Exception):
                             mb.flag([msg.uid], ["kindle-bounces"], True)
-                        except Exception:
-                            pass
                         log.warning("reconcile.bounce", message_id=message_id, reason=subject)
         except Exception as exc:
             log.error("reconcile.imap_error", error=str(exc))
 
-    def _match_bounce(
-        self, db: StateDB, msg: object
-    ) -> tuple[int, str] | None:
+    def _match_bounce(self, db: StateDB, msg: object) -> tuple[int, str] | None:
         for row in db.open_sends():
             # Heuristic: the bounce subject often contains the sent filename or dates
             if str(row["message_id"])[:10] in str(getattr(msg, "subject", "")):
@@ -118,11 +114,11 @@ class KindleEmailSender(Sender):
 
     def _confirm_stale_sends(self, db: StateDB) -> None:
         """After the success window, treat no-bounce as confirmed OK."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for row in db.open_sends():
             sent_at = datetime.fromisoformat(str(row["sent_at"]))
             if sent_at.tzinfo is None:
-                sent_at = sent_at.replace(tzinfo=timezone.utc)
+                sent_at = sent_at.replace(tzinfo=UTC)
             if now - sent_at > _SUCCESS_WINDOW:
                 db.confirm_send(int(row["id"]), "ok")
                 db.set_status(str(row["message_id"]), "confirmed_ok")

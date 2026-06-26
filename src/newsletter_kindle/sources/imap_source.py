@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
-from imap_tools import MailBox, AND
+from imap_tools import AND, MailBox
 
 from newsletter_kindle.models import RawMessage
 from newsletter_kindle.sources.base import Source
@@ -39,9 +39,9 @@ class ImapEmailSource(Source):
                 if mid in known_ids:
                     log.debug("imap.skip_known", message_id=mid)
                     continue
-                received_at = msg.date or datetime.now(timezone.utc)
+                received_at = msg.date or datetime.now(UTC)
                 if received_at.tzinfo is None:
-                    received_at = received_at.replace(tzinfo=timezone.utc)
+                    received_at = received_at.replace(tzinfo=UTC)
                 log.info("imap.found", message_id=mid, subject=msg.subject)
                 yield RawMessage(
                     source_name=self._source_name,

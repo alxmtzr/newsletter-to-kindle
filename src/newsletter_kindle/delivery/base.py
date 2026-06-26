@@ -10,5 +10,5 @@ class Sender(ABC):
     @abstractmethod
     def send(self, document: Document, attempt_no: int) -> SendReceipt: ...
 
-    def reconcile(self, db: StateDB) -> None:
+    def reconcile(self, db: StateDB) -> None:  # noqa: B027
         """Check for async outcomes (e.g. Amazon bounce emails). No-op by default."""

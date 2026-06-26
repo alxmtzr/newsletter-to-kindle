@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import io
-import math
 import random
 from pathlib import Path
 
@@ -53,7 +52,7 @@ def _gradient_mesh(draw: ImageDraw.ImageDraw, seed: int) -> None:
         draw.rectangle([x0, y0, x1, y1], outline=(*c3, alpha), width=2)
 
     # Diagonal accent lines
-    for i in range(6):
+    for _ in range(6):
         offset = rng.randint(0, _W)
         draw.line(
             [(offset, 0), (offset - int(_H * 0.4), int(_H * 0.65))],
@@ -76,7 +75,7 @@ def generate_cover(newsletter: Newsletter) -> bytes:
     img = Image.new("RGB", (_W, _H), (20, 20, 30))
     draw = ImageDraw.Draw(img, "RGBA")
 
-    accent_color = _gradient_mesh(draw, seed)
+    _gradient_mesh(draw, seed)
 
     # Dark bottom panel
     panel_top = int(_H * 0.62)
@@ -117,7 +116,7 @@ def generate_cover(newsletter: Newsletter) -> bytes:
             break
 
     y_offset = panel_top + 370
-    for i, headline in enumerate(stories):
+    for _, headline in enumerate(stories):
         draw.text((60, y_offset), f"• {headline}", fill=(130, 130, 160), font=font_story)
         y_offset += 58
 
@@ -130,7 +129,11 @@ def _hue_to_rgb(hue: int) -> tuple[int, int, int]:
     h = hue / 60
     x = int(255 * (1 - abs(h % 2 - 1)))
     sectors = [
-        (255, x, 0), (x, 255, 0), (0, 255, x),
-        (0, x, 255), (x, 0, 255), (255, 0, x),
+        (255, x, 0),
+        (x, 255, 0),
+        (0, 255, x),
+        (0, x, 255),
+        (x, 0, 255),
+        (255, 0, x),
     ]
     return sectors[int(h) % 6]

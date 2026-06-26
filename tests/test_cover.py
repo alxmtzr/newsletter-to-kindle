@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from newsletter_kindle.epub.cover import generate_cover
 from newsletter_kindle.models import Newsletter, Section, Story
@@ -13,12 +13,14 @@ def _sample_newsletter(date: str = "2024-01-15") -> Newsletter:
         title=f"TLDR — {date}",
         date=date,
         message_id=f"<cover-test-{date}>",
-        received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, tzinfo=UTC),
         sections=[
             Section(
                 title="BIG TECH",
                 emoji="⚡",
-                stories=[Story(title="Some Headline", url="https://example.com", body="Body text.")],
+                stories=[
+                    Story(title="Some Headline", url="https://example.com", body="Body text.")
+                ],
             )
         ],
     )

@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from xml.etree import ElementTree
-
-import pytest
 
 from newsletter_kindle.epub.builder import build_epub
-from newsletter_kindle.models import Newsletter, Section, Story
+from newsletter_kindle.models import Newsletter, RawMessage, Section, Story
 from newsletter_kindle.parsers.tldr_parser import TldrParser
-from newsletter_kindle.models import RawMessage
 
 
 def _sample_newsletter(date: str = "2024-01-15") -> Newsletter:
@@ -19,7 +15,7 @@ def _sample_newsletter(date: str = "2024-01-15") -> Newsletter:
         title=f"TLDR — {date}",
         date=date,
         message_id=f"<test-epub-{date}@fixture>",
-        received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, tzinfo=UTC),
         sections=[
             Section(
                 title="BIG TECH & STARTUPS",
@@ -120,8 +116,8 @@ def test_epub_identifier_stable_across_runs(tmp_path: Path) -> None:
     opf2 = get_identifier(tmp_path / "run2" / doc2.filename)
     # Same message_id → same UUID
     assert "urn:uuid:" in opf1
-    uid_line1 = [l for l in opf1.splitlines() if "urn:uuid:" in l][0]
-    uid_line2 = [l for l in opf2.splitlines() if "urn:uuid:" in l][0]
+    uid_line1 = [line for line in opf1.splitlines() if "urn:uuid:" in line][0]
+    uid_line2 = [line for line in opf2.splitlines() if "urn:uuid:" in line][0]
     assert uid_line1 == uid_line2
 
 
@@ -130,7 +126,7 @@ def test_epub_built_from_fixture(tmp_path: Path) -> None:
     raw = RawMessage(
         source_name="tldr",
         message_id="<test-full@fixture>",
-        received_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+        received_at=datetime(2024, 1, 15, tzinfo=UTC),
         raw_bytes=fixture.read_bytes(),
     )
     newsletter = TldrParser().parse(raw, {"title_prefix": "TLDR", "author": "Dan Ni"})
