@@ -22,6 +22,57 @@ def test_bounce_subject_regex() -> None:
     assert not _BOUNCE_SUBJECT_RE.search("Your Kindle delivery was successful")
 
 
+def test_match_bounce_by_filename(tmp_path: Path) -> None:
+    db = StateDB(tmp_path / "state.db")
+    db.upsert_newsletter(
+        message_id="<msg1>",
+        source="tldr",
+        subject="TLDR 2026-06-26",
+        received_at=datetime(2026, 6, 26, tzinfo=UTC),
+        status="sent",
+    )
+    db.set_status("<msg1>", "sent", epub_path="/app/data/epubs/tldr/TLDR_2026-06-26.epub")
+    aid = db.record_send("<msg1>", 1)
+
+    sender = KindleEmailSender(user="u", password="p", kindle_email="k@kindle.com")
+
+    # Simulate Amazon bounce email body containing the filename
+    class FakeMsg:
+        text = (
+            "Folgende Dokumente konnten nicht zugestellt werden:\n\n"
+            "* TLDR_2026-06-26.epub\n\n"
+            "E999 - Send to Kindle - Interner Fehler"
+        )
+        subject = "Es gab ein Problem mit dem/den Dokument/en"
+
+    matched = sender._match_bounce(db, FakeMsg())
+    assert matched is not None
+    assert matched == (aid, "<msg1>")
+
+
+def test_match_bounce_no_match(tmp_path: Path) -> None:
+    db = StateDB(tmp_path / "state.db")
+    db.upsert_newsletter(
+        message_id="<msg2>",
+        source="tldr",
+        subject="TLDR 2026-06-25",
+        received_at=datetime(2026, 6, 25, tzinfo=UTC),
+        status="sent",
+    )
+    db.set_status("<msg2>", "sent", epub_path="/app/data/epubs/tldr/TLDR_2026-06-25.epub")
+    db.record_send("<msg2>", 1)
+
+    sender = KindleEmailSender(user="u", password="p", kindle_email="k@kindle.com")
+
+    # Bounce email mentions a different filename
+    class FakeMsg:
+        text = "* TLDR_2026-06-20.epub\n\nE999 error"
+        subject = "Es gab ein Problem"
+
+    matched = sender._match_bounce(db, FakeMsg())
+    assert matched is None
+
+
 def test_reconcile_confirms_stale_sends(tmp_path: Path) -> None:
     from datetime import timedelta
 

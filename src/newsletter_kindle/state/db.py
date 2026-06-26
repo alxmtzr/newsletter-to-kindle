@@ -122,7 +122,7 @@ class StateDB:
         """Sends dispatched but not yet confirmed (outcome IS NULL)."""
         return self._conn.execute(
             """
-            SELECT sa.id, sa.message_id, sa.sent_at, sa.attempt_no
+            SELECT sa.id, sa.message_id, sa.sent_at, sa.attempt_no, n.epub_path
             FROM send_attempts sa
             JOIN newsletters n ON n.message_id = sa.message_id
             WHERE sa.outcome IS NULL
