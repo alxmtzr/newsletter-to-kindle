@@ -51,8 +51,8 @@ def _pattern_geometric(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _R
         y0 = rng.randint(-100, int(_H * 0.65))
         x1 = x0 + rng.randint(80, 400)
         y1 = y0 + rng.randint(80, 400)
-        alpha = rng.randint(12, 40)
-        draw.rectangle([x0, y0, x1, y1], outline=(*accent, alpha), width=2)
+        alpha = rng.randint(60, 110)
+        draw.rectangle([x0, y0, x1, y1], outline=(*accent, alpha), width=rng.randint(2, 4))
 
 
 def _pattern_diagonal(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
@@ -60,8 +60,8 @@ def _pattern_diagonal(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RG
         x = rng.randint(0, _W)
         draw.line(
             [(x, 0), (x - int(_H * 0.5), _H)],
-            fill=(*accent, rng.randint(15, 35)),
-            width=rng.randint(1, 3),
+            fill=(*accent, rng.randint(55, 100)),
+            width=rng.randint(2, 4),
         )
 
 
@@ -70,17 +70,18 @@ def _pattern_circles(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB
         cx = rng.randint(0, _W)
         cy = rng.randint(0, int(_H * 0.65))
         r = rng.randint(60, 300)
-        alpha = rng.randint(10, 35)
-        draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(*accent, alpha), width=2)
+        alpha = rng.randint(55, 100)
+        w = rng.randint(2, 4)
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(*accent, alpha), width=w)
 
 
 def _pattern_grid(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
     spacing = rng.randint(80, 160)
-    alpha = rng.randint(10, 25)
+    alpha = rng.randint(55, 90)
     for x in range(0, _W, spacing):
-        draw.line([(x, 0), (x, int(_H * 0.65))], fill=(*accent, alpha), width=1)
+        draw.line([(x, 0), (x, int(_H * 0.65))], fill=(*accent, alpha), width=2)
     for y in range(0, int(_H * 0.65), spacing):
-        draw.line([(0, y), (_W, y)], fill=(*accent, alpha), width=1)
+        draw.line([(0, y), (_W, y)], fill=(*accent, alpha), width=2)
 
 
 def _pattern_waves(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) -> None:
@@ -89,10 +90,10 @@ def _pattern_waves(draw: ImageDraw.ImageDraw, rng: random.Random, accent: _RGB) 
         y_base = rng.randint(50, int(_H * 0.6))
         amp = rng.randint(20, 80)
         freq = rng.uniform(0.003, 0.01)
-        alpha = rng.randint(15, 40)
+        alpha = rng.randint(60, 110)
         points = [(x, int(y_base + amp * math.sin(freq * x + i))) for x in range(0, _W, 4)]
         if len(points) > 1:
-            draw.line(points, fill=(*accent, alpha), width=2)
+            draw.line(points, fill=(*accent, alpha), width=rng.randint(2, 4))
 
 
 _PATTERN_FNS = {
