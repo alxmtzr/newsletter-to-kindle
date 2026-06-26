@@ -1,1 +1,1 @@
-0 * * * * cd /app && python -m newsletter_kindle run --config /app/config.yaml >> /var/log/newsletter-kindle.log 2>&1
+0 * * * * root cd /app && PYTHONPATH=/app/src python -m newsletter_kindle run --config /app/config.yaml >> /var/log/newsletter-kindle.log 2>&1

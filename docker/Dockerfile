@@ -1,21 +1,6 @@
-# Stage 1: Python builder — install dependencies
-FROM python:3.12-slim AS builder
-WORKDIR /app
-COPY pyproject.toml ./
-COPY src/ src/
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+# Stage 1: Build stage — only used to download EPUBCheck jar
+FROM eclipse-temurin:21-jre-alpine AS jre
 
-# Stage 2: Runtime with JRE for EPUBCheck
-FROM eclipse-temurin:21-jre-alpine AS runtime
-
-# Install Python + pip from Alpine repos
-RUN apk add --no-cache python3 py3-pip
-
-# Copy installed Python packages from builder into the Alpine Python's site-packages
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/lib/python3.12/site-packages
-
-# EPUBCheck
 ARG EPUBCHECK_VERSION=5.1.0
 RUN apk add --no-cache wget unzip && \
     mkdir -p /opt/epubcheck && \
@@ -23,18 +8,35 @@ RUN apk add --no-cache wget unzip && \
          -O /tmp/epubcheck.zip && \
     unzip /tmp/epubcheck.zip -d /tmp/epubcheck_extract && \
     cp "/tmp/epubcheck_extract/epubcheck-${EPUBCHECK_VERSION}/epubcheck.jar" /opt/epubcheck/ && \
-    rm -rf /tmp/epubcheck.zip /tmp/epubcheck_extract && \
-    apk del wget unzip
+    rm -rf /tmp/epubcheck.zip /tmp/epubcheck_extract
 
-# App source
+# Stage 2: Runtime — Python + JRE + app
+FROM python:3.12-slim AS runtime
+
+# Install JRE (for EPUBCheck)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends default-jre-headless cron && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy EPUBCheck jar from jre stage
+COPY --from=jre /opt/epubcheck /opt/epubcheck
+
+# Install Python dependencies
 WORKDIR /app
+COPY pyproject.toml ./
 COPY src/ src/
-COPY config.yaml .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir . && \
+    pip install --no-cache-dir --root-user-action=ignore .
 
-# Cron
-COPY docker/crontab /etc/crontabs/root
+# Copy app config and cron
+COPY config.yaml .
+COPY docker/crontab /etc/cron.d/newsletter-kindle
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh && \
+    chmod 0644 /etc/cron.d/newsletter-kindle && \
+    crontab /etc/cron.d/newsletter-kindle
 
 ENV TZ=Europe/Berlin
 ENV PYTHONPATH=/app/src
