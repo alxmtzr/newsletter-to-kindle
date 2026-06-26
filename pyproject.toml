@@ -12,6 +12,7 @@ dependencies = [
     "imap-tools>=1.7",
     "Pillow>=10.4",
     "pydantic-settings>=2.4",
+    "pyyaml>=6.0",
     "structlog>=26.1.0",
 ]
 
