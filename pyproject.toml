@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=82.0.1"]
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,23 +7,23 @@ name = "newsletter-kindle"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "beautifulsoup4>=4.12",
-    "ebooklib>=0.18",
-    "imap-tools>=1.7",
-    "Pillow>=10.4",
-    "pydantic-settings>=2.4",
-    "pyyaml>=6.0",
+    "beautifulsoup4>=4.15.0",
+    "ebooklib>=0.20",
+    "imap-tools>=1.13.0",
+    "Pillow>=12.3.0",
+    "pydantic-settings>=2.14.2",
+    "pyyaml>=6.0.3",
     "structlog>=26.1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "detect-secrets>=1.5",
-    "mypy>=1.11",
-    "pre-commit>=3.8",
+    "mypy>=2.1.0",
+    "pre-commit>=4.6.0",
     "pytest-cov>=7.1.0",
     "pytest>=9.1.1",
-    "ruff>=0.6",
+    "ruff>=0.15.20",
     "types-beautifulsoup4",
     "types-PyYAML",
 ]
