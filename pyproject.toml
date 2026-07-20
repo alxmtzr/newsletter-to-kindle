@@ -19,11 +19,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "detect-secrets>=1.5",
-    "mypy>=2.1.0",
+    "mypy>=2.2.0",
     "pre-commit>=4.6.0",
     "pytest-cov>=7.1.0",
     "pytest>=9.1.1",
-    "ruff>=0.15.20",
+    "ruff>=0.15.21",
     "types-beautifulsoup4",
     "types-PyYAML",
 ]
