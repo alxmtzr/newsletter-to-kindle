@@ -9,7 +9,7 @@ requires-python = ">=3.12"
 dependencies = [
     "beautifulsoup4>=4.15.0",
     "ebooklib>=0.20",
-    "imap-tools>=1.13.0",
+    "imap-tools>=1.14.0",
     "Pillow>=12.3.0",
     "pydantic-settings>=2.14.2",
     "pyyaml>=6.0.3",
@@ -19,11 +19,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "detect-secrets>=1.5",
-    "mypy>=2.2.0",
-    "pre-commit>=4.6.0",
+    "mypy>=2.3.0",
+    "pre-commit>=4.6.1",
     "pytest-cov>=7.1.0",
     "pytest>=9.1.1",
-    "ruff>=0.15.21",
+    "ruff>=0.16.0",
     "types-beautifulsoup4",
     "types-PyYAML",
 ]
