@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=83.0.0"]
+requires = ["setuptools>=84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,9 +9,9 @@ requires-python = ">=3.12"
 dependencies = [
     "beautifulsoup4>=4.15.0",
     "ebooklib>=0.20",
-    "imap-tools>=1.14.0",
+    "imap-tools>=1.15.0",
     "Pillow>=12.3.0",
-    "pydantic-settings>=2.14.2",
+    "pydantic-settings>=2.15.0",
     "pyyaml>=6.0.3",
     "structlog>=26.1.0",
 ]
@@ -19,11 +19,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "detect-secrets>=1.5",
-    "mypy>=2.3.0",
-    "pre-commit>=4.6.1",
+    "mypy>=2.3.1",
+    "pre-commit>=4.6.2",
     "pytest-cov>=7.1.0",
     "pytest>=9.1.1",
-    "ruff>=0.16.0",
+    "ruff>=0.16.4",
     "types-beautifulsoup4",
     "types-PyYAML",
 ]
