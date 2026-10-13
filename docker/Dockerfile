@@ -10,7 +10,7 @@ RUN apk add --no-cache wget unzip && \
     rm -rf /tmp/epubcheck.zip /tmp/epubcheck_extract
 
 # Stage 2: Runtime — Python + JRE + app
-FROM python:3.12-slim AS runtime
+FROM python:3.15-slim AS runtime
 
 # Install JRE (for EPUBCheck)
 RUN apt-get update && \
