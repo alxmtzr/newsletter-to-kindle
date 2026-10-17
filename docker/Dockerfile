@@ -1,5 +1,5 @@
 # Stage 1: Build stage — only used to download EPUBCheck and its dependencies
-FROM eclipse-temurin:21-jre-alpine AS jre
+FROM eclipse-temurin:25-jre-alpine AS jre
 
 ARG EPUBCHECK_VERSION=5.1.0
 RUN apk add --no-cache wget unzip && \
