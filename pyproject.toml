@@ -11,7 +11,7 @@ dependencies = [
     "ebooklib>=0.20",
     "imap-tools>=1.16.0",
     "Pillow>=13.0.0",
-    "pydantic-settings>=2.16.1",
+    "pydantic-settings>=2.16.2",
     "pyyaml>=6.0.3",
     "structlog>=26.1.0",
 ]
@@ -19,11 +19,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "detect-secrets>=1.5",
-    "mypy>=2.4.0",
+    "mypy>=2.4.1",
     "pre-commit>=4.7.0",
     "pytest-cov>=7.1.0",
-    "pytest>=9.1.1",
-    "ruff>=0.17.2",
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
     "types-beautifulsoup4",
     "types-PyYAML",
 ]
