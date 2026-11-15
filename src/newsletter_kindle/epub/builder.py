@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 
 import structlog
-from ebooklib import epub  # type: ignore[import-untyped]
+from ebooklib import epub
 from PIL import Image
 
 from newsletter_kindle.epub.cover import generate_cover
@@ -34,14 +34,13 @@ def _fix_epub(path: Path) -> None:
             # Remove DOCTYPE — causes E999 on Amazon's converter
             text = text.replace("<!DOCTYPE html>\n", "").replace("<!DOCTYPE html>", "")
             data = text.encode("utf-8")
-        elif "cover.jpg" in filename:
-            if len(data) > _COVER_MAX_BYTES:
-                img = Image.open(io.BytesIO(data))
-                resized = img.resize((_COVER_WIDTH, _COVER_HEIGHT), Image.Resampling.LANCZOS)
-                buf = io.BytesIO()
-                resized.save(buf, format="JPEG", quality=80, optimize=True)
-                data = buf.getvalue()
-                log.info("epub.cover_recompressed", size=len(data))
+        elif "cover.jpg" in filename and len(data) > _COVER_MAX_BYTES:
+            img = Image.open(io.BytesIO(data))
+            resized = img.resize((_COVER_WIDTH, _COVER_HEIGHT), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            resized.save(buf, format="JPEG", quality=80, optimize=True)
+            data = buf.getvalue()
+            log.info("epub.cover_recompressed", size=len(data))
         fixed[filename] = (info, data)
 
     tmp = path.with_suffix(".tmp.epub")
