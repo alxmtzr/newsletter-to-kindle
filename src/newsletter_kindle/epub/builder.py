@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 
 import structlog
-from ebooklib import epub  # type: ignore[import-untyped]
+from ebooklib import epub
 from PIL import Image
 
 from newsletter_kindle.epub.cover import generate_cover
